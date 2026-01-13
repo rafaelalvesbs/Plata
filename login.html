@@ -151,14 +151,51 @@
         .registro-only { display: none; }
 
         @media (max-width: 1024px) {
-            .left-side { display: none; }
-            .right-side { flex: 1; height: 100vh; padding: 40px 20px; }
+            body {
+                background: linear-gradient(135deg, #002340 0%, #004aad 100%);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+                overflow-y: auto;
+            }
+
+            .left-side {
+                display: none;
+            }
+
+            .right-side {
+                flex: none;
+                width: 100%;
+                max-width: 400px;
+                height: auto;
+                max-height: 90vh;
+                border-radius: 24px;
+                padding: 30px 20px;
+                box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            }
+
+            .form-container {
+                max-width: 100%;
+            }
         }
 
         @media (max-width: 480px) {
-            .options-row { flex-direction: column; gap: 15px; align-items: flex-start; }
-            .welcome-text { margin-bottom: 20px; }
+            .right-side {
+                max-width: 92%;
+                padding: 25px 15px;
+                margin: 10px;
+            }
+            .welcome-text h2 {
+                font-size: 1.6rem;
+            }
+            .options-row { 
+                flex-direction: column; 
+                gap: 12px; 
+                align-items: flex-start; 
+            }
         }
+        
     </style>
 </head>
 <body>
