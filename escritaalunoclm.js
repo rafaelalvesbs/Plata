@@ -4,20 +4,30 @@ window.Router.register('escritaalunoclm', async () => {
     const auth = window.authMethods.getAuth();
 
     // Bloqueio Total (Desktop e Mobile)
-    const bloquear = (e) => {
+    const bloquearEvento = (e) => {
         e.preventDefault();
+        e.stopPropagation();
         return false;
     };
-    document.addEventListener('copy', bloquear);
-    document.addEventListener('paste', bloquear);
-    document.addEventListener('cut', bloquear);
-    document.addEventListener('contextmenu', bloquear);
-    // Bloqueio específico para Mobile (Long Press/Seleção)
-    document.addEventListener('touchstart', (e) => {
-        if (e.target.id === 'texto-redacao' && e.touches.length > 1) {
-            e.preventDefault();
+    document.addEventListener('copy', bloquearEvento, true);
+    document.addEventListener('paste', bloquearEvento, true);
+    document.addEventListener('cut', bloquearEvento, true);
+    document.addEventListener('contextmenu', bloquearEvento, true);
+    document.addEventListener('selectstart', bloquearEvento, true);
+
+    const verificarAcessoEditor = () => {
+        const textarea = document.getElementById('texto-redacao');
+        if (!propostaAtiva) {
+            textarea.readOnly = true;
+            textarea.style.cursor = 'not-allowed';
+            textarea.placeholder = "ACESSO NEGADO: Selecione uma proposta na aba 'REDAÇÕES RECEBIDAS' para liberar o editor.";
+            return false;
         }
-    }, { passive: false });
+        textarea.readOnly = false;
+        textarea.style.cursor = 'text';
+        textarea.placeholder = "Inicie sua escrita aqui...";
+        return true;
+    };
 
     let propostaAtiva = null;
     let paginaAtualEnviadas = 1; 
@@ -88,6 +98,13 @@ window.Router.register('escritaalunoclm', async () => {
         if (tab === 'enviadas') carregarEnviadas();
         if (tab === 'recebidas') carregarPropostasDisponiveis();
     };
+
+    if (tab === 'escrever') {
+            const liberado = verificarAcessoEditor();
+            if (!liberado && !propostaAtiva) {
+                window.mostrarAviso("Bloqueado", "Você só pode escrever se selecionar uma atividade em 'Recebidas'.", "erro");
+            }
+        }
 
     async function carregarPropostasDisponiveis() {
     const container = document.getElementById('lista-propostas-recebidas');
@@ -514,7 +531,7 @@ window.Router.register('escritaalunoclm', async () => {
                 <div class="linha-pautada">
                     <div class="margem-numerica">${Array.from({ length: 25 }, (_, i) => `<div class="num-linha" style="height: 30px; display: flex; align-items: center; justify-content: center;">${(i + 1)}</div>`).join('')}</div>
                     <div class="margem-vermelha"></div>
-                    <textarea id="texto-redacao" spellcheck="false" oncopy="return false" onpaste="return false" oncut="return false" oncontextmenu="return false" placeholder="Inicie sua escrita aqui..."></textarea>
+                    <textarea id="texto-redacao" readonly spellcheck="false" oncopy="return false" onpaste="return false" oncut="return false" oncontextmenu="return false" placeholder="ACESSO NEGADO: Selecione uma proposta na aba 'REDAÇÕES RECEBIDAS' primeiro."></textarea>
                 </div>
             </div>
             <button onclick="window.enviarRedacaoFinal()" style="width:100%; max-width:850px; margin: 20px auto; display:block; background:#003058; color:white; padding:18px; border:none; border-radius:12px; font-weight:800; cursor:pointer;">ENVIAR REDAÇÃO</button>
