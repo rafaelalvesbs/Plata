@@ -224,50 +224,79 @@ window.Router.register('calendarioclm', async () => {
     setTimeout(atualizarCalendarioCompleto, 200);
 
     return `
-    <div class="header-prof">
-        <h1 style="text-transform: uppercase; color: ${azulPadrao}; font-weight: 800;">Calendário</h1>
-        <p style="color: #64748b;">Agende seus compromissos e organize sua rotina de estudos.</p>
-    </div>
+    <style>
+      .cal-main-container { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+      .cal-header-responsive { margin-bottom: 20px; }
+      .cal-header-responsive h1 { font-size: clamp(1.3rem, 4vw, 1.8rem); color: ${azulPadrao}; font-weight: 800; margin: 0; }
+      .cal-header-responsive p { font-size: 0.85rem; color: #64748b; margin-top: 5px; }
 
-    <hr class="divisor" style="border-color: #e2e8f0; margin: 20px 0;">
+      .cal-layout-grid { 
+        display: grid; 
+        grid-template-columns: 1fr 350px; 
+        gap: 20px; 
+        width: 100%; 
+      }
 
-    <div style="display: grid; grid-template-columns: 1fr 350px; gap: 20px; width: 100%;">
-        <div class="card" style="box-shadow: 0 10px 25px rgba(0,0,0,0.03); border-radius: 20px; background: white; padding: 25px; border: 1px solid #f1f5f9;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
-                <h2 id="titulo-mes-ano" style="color: ${azulPadrao}; text-transform: capitalize; margin:0; font-size: 1.3rem; font-weight: 800;">Carregando...</h2>
-                <div style="display: flex; gap: 10px;">
-                    <button onclick="window.navegarMes(-1)" style="width: 40px; height: 40px; background: #f1f5f9; color: ${azulPadrao}; border:none; cursor:pointer; border-radius:12px;"><i class="fa-solid fa-chevron-left"></i></button>
-                    <button onclick="window.navegarMes(1)" style="width: 40px; height: 40px; background: #f1f5f9; color: ${azulPadrao}; border:none; cursor:pointer; border-radius:12px;"><i class="fa-solid fa-chevron-right"></i></button>
-                </div>
-            </div>
-            <table style="width: 100%; border-collapse: separate; border-spacing: 0 5px; text-align: center;">
-                <thead>
-                    <tr style="color: #94a3b8; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px;">
-                        <th style="padding: 10px;">Dom</th><th style="padding: 10px;">Seg</th><th style="padding: 10px;">Ter</th><th style="padding: 10px;">Qua</th><th style="padding: 10px;">Qui</th><th style="padding: 10px;">Sex</th><th style="padding: 10px;">Sáb</th>
-                    </tr>
-                </thead>
-                <tbody id="corpo-calendario"></tbody>
-            </table>
+      .cal-card-unified { 
+        background: white; 
+        border-radius: 20px; 
+        padding: clamp(15px, 3vw, 25px); 
+        border: 1px solid #f1f5f9; 
+        box-shadow: 0 10px 25px rgba(0,0,0,0.03); 
+        box-sizing: border-box;
+      }
+
+      .cal-table-responsive { width: 100%; border-collapse: separate; border-spacing: 0 2px; text-align: center; }
+      .cal-table-responsive th { padding: 8px; color: #94a3b8; font-size: 0.7rem; text-transform: uppercase; font-weight: 800; }
+      #corpo-calendario td { padding: clamp(8px, 2vw, 15px) !important; }
+
+      @media (max-width: 1000px) {
+        .cal-layout-grid { grid-template-columns: 1fr; }
+        .side-panel-eventos { width: 100% !important; height: auto !important; min-height: 400px; }
+      }
+
+      @media (max-width: 480px) {
+        .cal-table-responsive th { font-size: 0.6rem; padding: 4px; }
+        #corpo-calendario td { font-size: 0.8rem; }
+      }
+    </style>
+
+    <div class="cal-main-container">
+        <div class="cal-header-responsive">
+            <h1>CALENDÁRIO</h1>
+            <p>Agende seus compromissos e organize sua rotina.</p>
         </div>
 
-        <div class="card" style="box-shadow: 0 10px 25px rgba(0,0,0,0.03); border-radius: 20px; display: flex; flex-direction: column; background: white; padding: 25px; border: 1px solid #f1f5f9; width: 350px; height: 480px; box-sizing: border-box; overflow: hidden;">
-            <h3 style="color: ${azulPadrao}; font-size: 1rem; margin-bottom: 20px; font-weight: 800; text-transform: uppercase; border-bottom: 2px solid #f8fafc; padding-bottom: 12px; display: flex; align-items: center; flex-shrink: 0;">
-                <div style="width: 8px; height: 18px; background: #004aad; border-radius: 4px; margin-right: 10px;"></div>
-                Meus Eventos
-            </h3>
-            
-            <div id="lista-eventos-dinamica" style="flex: 1; overflow: hidden;"></div>
-            
-            <div id="paginacao-eventos" style="display: none; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px; flex-shrink: 0;">
-                <button onclick="window.mudarPaginaEvento(-1)" style="width:30px; height:30px; border-radius:50%; border:1px solid #e2e8f0; background:white; color:${azulPadrao}; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-                    <i class="fa-solid fa-chevron-left" style="font-size:0.7rem;"></i>
-                </button>
-                
-                <span id="indicador-paginas" style="font-size: 0.75rem; font-weight: 800; color: #64748b;">1 / 1</span>
-                
-                <button onclick="window.mudarPaginaEvento(1)" style="width:30px; height:30px; border-radius:50%; border:1px solid #e2e8f0; background:white; color:${azulPadrao}; cursor:pointer; display:flex; align-items:center; justify-content:center;">
-                    <i class="fa-solid fa-chevron-right" style="font-size:0.7rem;"></i>
-                </button>
+        <hr style="border: 0; border-top: 1px solid #e2e8f0; margin: 15px 0 25px 0;">
+
+        <div class="cal-layout-grid">
+            <div class="cal-card-unified">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
+                    <h2 id="titulo-mes-ano" style="color: ${azulPadrao}; text-transform: capitalize; margin:0; font-size: 1.2rem; font-weight: 800;">Carregando...</h2>
+                    <div style="display: flex; gap: 8px;">
+                        <button onclick="window.navegarMes(-1)" style="width: 38px; height: 38px; background: #f1f5f9; color: ${azulPadrao}; border:none; cursor:pointer; border-radius:10px;"><i class="fa-solid fa-chevron-left"></i></button>
+                        <button onclick="window.navegarMes(1)" style="width: 38px; height: 38px; background: #f1f5f9; color: ${azulPadrao}; border:none; cursor:pointer; border-radius:10px;"><i class="fa-solid fa-chevron-right"></i></button>
+                    </div>
+                </div>
+                <table class="cal-table-responsive">
+                    <thead>
+                        <tr><th>Dom</th><th>Seg</th><th>Ter</th><th>Qua</th><th>Qui</th><th>Sex</th><th>Sáb</th></tr>
+                    </thead>
+                    <tbody id="corpo-calendario"></tbody>
+                </table>
+            </div>
+
+            <div class="cal-card-unified side-panel-eventos" style="display: flex; flex-direction: column; height: 480px;">
+                <h3 style="color: ${azulPadrao}; font-size: 0.9rem; margin: 0 0 20px 0; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; border-bottom: 2px solid #f8fafc; padding-bottom: 12px;">
+                    <div style="width: 6px; height: 16px; background: #004aad; border-radius: 3px; margin-right: 10px;"></div>
+                    Meus Eventos
+                </h3>
+                <div id="lista-eventos-dinamica" style="flex: 1; overflow-y: auto;"></div>
+                <div id="paginacao-eventos" style="display: none; justify-content: space-between; align-items: center; margin-top: 15px; border-top: 1px solid #f1f5f9; padding-top: 15px;">
+                    <button onclick="window.mudarPaginaEvento(-1)" style="width:32px; height:32px; border-radius:50%; border:1px solid #e2e8f0; background:white; color:${azulPadrao}; cursor:pointer;"><i class="fa-solid fa-chevron-left"></i></button>
+                    <span id="indicador-paginas" style="font-size: 0.7rem; font-weight: 800; color: #64748b;">1 / 1</span>
+                    <button onclick="window.mudarPaginaEvento(1)" style="width:32px; height:32px; border-radius:50%; border:1px solid #e2e8f0; background:white; color:${azulPadrao}; cursor:pointer;"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
             </div>
         </div>
     </div>
