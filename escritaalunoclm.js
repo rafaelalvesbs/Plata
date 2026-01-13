@@ -15,8 +15,17 @@ window.Router.register('escritaalunoclm', async () => {
     let paginaRecebidas = 1; 
     const itensPorPaginaRecebidas = 6; 
 
-    const user = auth.currentUser;
-    if (!user) return `<div style="padding:20px;text-align:center;">Aguardando login...</div>`;
+    const obterUsuario = () => {
+        return new Promise((resolve) => {
+            const unsubscribe = auth.onAuthStateChanged(user => {
+                unsubscribe();
+                resolve(user);
+            });
+        });
+    };
+
+    const user = await obterUsuario();
+    if (!user) return `<div style="padding:20px;text-align:center;">Sessão expirada. Refaça o login.</div>`;
 
     // --- FUNÇÃO PARA ALERTAS MODERNOS ---
     window.mostrarAviso = (titulo, mensagem, tipo = 'sucesso', callback = null) => {
@@ -377,6 +386,15 @@ window.Router.register('escritaalunoclm', async () => {
 
     setTimeout(carregarPropostasDisponiveis, 300);
 
+    setTimeout(() => {
+        const checkDOM = setInterval(() => {
+            if (document.getElementById('lista-propostas-recebidas')) {
+                carregarPropostasDisponiveis();
+                clearInterval(checkDOM);
+            }
+        }, 100);
+    }, 200);
+
     return `
     <style>
         .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-user-select: none; user-select: none; }
@@ -405,6 +423,14 @@ window.Router.register('escritaalunoclm', async () => {
         .margem-numerica { position: absolute; left: 0; top: 0; width: 40px; text-align: center; color: #94a3b8; font-size: 11px; border-right: 1px solid #fca5a5; }
         .margem-vermelha { position: absolute; left: 50px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; }
         #salvamento-status { font-size: 10px; color: #10b981; font-weight: 600; opacity: 0; transition: opacity 0.3s; margin-left: 10px; }
+
+        @media (max-width: 768px) {
+            .linha-pautada { min-height: 500px; padding-left: 40px; }
+            #texto-redacao { height: 500px; font-size: 16px; }
+            .margem-vermelha { left: 35px; }
+            .header-prof h1 { font-size: 1.5rem; }
+        }
+            
     </style>
 
     <div class="container-escrita">
