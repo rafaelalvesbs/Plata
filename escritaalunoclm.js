@@ -3,11 +3,21 @@ window.Router.register('escritaalunoclm', async () => {
     const fs = window.fsMethods;
     const auth = window.authMethods.getAuth();
 
-    // Bloqueio de interface (Anti-Plágio)
-    document.addEventListener('copy', (e) => e.preventDefault());
-    document.addEventListener('paste', (e) => e.preventDefault());
-    document.addEventListener('cut', (e) => e.preventDefault());
-    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    // Bloqueio Total (Desktop e Mobile)
+    const bloquear = (e) => {
+        e.preventDefault();
+        return false;
+    };
+    document.addEventListener('copy', bloquear);
+    document.addEventListener('paste', bloquear);
+    document.addEventListener('cut', bloquear);
+    document.addEventListener('contextmenu', bloquear);
+    // Bloqueio específico para Mobile (Long Press/Seleção)
+    document.addEventListener('touchstart', (e) => {
+        if (e.target.id === 'texto-redacao' && e.touches.length > 1) {
+            e.preventDefault();
+        }
+    }, { passive: false });
 
     let propostaAtiva = null;
     let paginaAtualEnviadas = 1; 
@@ -137,10 +147,13 @@ window.Router.register('escritaalunoclm', async () => {
 
         container.innerHTML = "";
         propostasPagina.forEach(data => {
-            const prazoF = data.prazo ? new Date(data.prazo).toLocaleDateString('pt-BR') : 'Sem prazo';
+            // Ajuste de fuso horário para evitar retrocesso de data
+            // Correção de fuso horário e data inválida
+            const dataIso = data.prazo && data.prazo.includes('T') ? data.prazo : data.prazo + "T23:59:59";
+            const prazoF = data.prazo ? new Date(dataIso).toLocaleDateString('pt-BR') : 'Sem prazo';
             const hoje = new Date();
             hoje.setHours(0, 0, 0, 0);
-            const dataPrazo = data.prazo ? new Date(data.prazo) : null;
+            const dataPrazo = data.prazo ? new Date(dataIso) : null;
             const prazoVencido = dataPrazo && hoje > dataPrazo;
 
             const card = document.createElement('div');
@@ -195,9 +208,10 @@ window.Router.register('escritaalunoclm', async () => {
         
         const prazoElement = document.getElementById('prazo-dinamico');
         if (proposta.prazo) {
-            prazoElement.innerText = new Date(proposta.prazo).toLocaleDateString('pt-BR');
+        const dataIsoEditor = proposta.prazo.includes('T') ? proposta.prazo : proposta.prazo + "T23:59:59";
+        prazoElement.innerText = new Date(dataIsoEditor).toLocaleDateString('pt-BR');
         } else {
-            prazoElement.innerText = '--/--/--';
+        prazoElement.innerText = '--/--/--';
         }
         
         const imgCont = document.getElementById('container-img-apoio');
@@ -409,7 +423,7 @@ window.Router.register('escritaalunoclm', async () => {
 
     return `
     <style>
-        .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-user-select: none; user-select: none; }
+        .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif;}
         .header-prof h1 { text-transform: uppercase; color: #003058; font-weight: 900; margin: 0; font-size: 2rem; }
         .pill-tab-container { display: flex; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
         .pill-tab { padding: 10px 20px; border-radius: 50px; border: none; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.3s; }
@@ -429,12 +443,45 @@ window.Router.register('escritaalunoclm', async () => {
             word-break: break-word;
         }
 
-        .folha-caderno { background: #fff; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #d1d5db; width: 100%; max-width: 850px; margin: 0 auto; }
+        .folha-caderno { background: #fff; border-radius: 4px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #d1d5db; width: 100%; max-width: 850px; margin: 0 auto; overflow: hidden; }
         .linha-pautada { position: relative; background: #fff; padding-left: 55px; background-image: linear-gradient(#e5e7eb 1px, transparent 1px); background-size: 100% 30px; line-height: 30px; min-height: 750px; }
-        #texto-redacao { -webkit-user-select: text; user-select: text; width: 100%; height: 750px; background: transparent; border: none; outline: none; resize: none; font-family: 'Kalam', cursive; font-size: 18px; color: #2c3e50; padding: 0 15px; line-height: 30px; display: block; box-sizing: border-box; }
-        .margem-numerica { position: absolute; left: 0; top: 0; width: 40px; text-align: center; color: #94a3b8; font-size: 11px; border-right: 1px solid #fca5a5; }
-        .margem-vermelha { position: absolute; left: 50px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; }
-        #salvamento-status { font-size: 10px; color: #10b981; font-weight: 600; opacity: 0; transition: opacity 0.3s; margin-left: 10px; }
+        #texto-redacao { width: 100%; height: 750px; background: transparent; border: none; outline: none; resize: none; font-family: 'Kalam', cursive; font-size: 18px; color: #2c3e50; padding: 0 15px; line-height: 30px; display: block; box-sizing: border-box; }
+        .margem-numerica { position: absolute; left: 0; top: 0; width: 40px; text-align: center; color: #94a3b8; font-size: 11px; border-right: 1px solid #fca5a5; z-index: 1; }
+        .margem-vermelha { position: absolute; left: 50px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; z-index: 1; }
+
+        @media (max-width: 768px) {
+            .header-prof h1 { font-size: 1.5rem; }
+            .pill-tab { padding: 8px 12px; font-size: 10px; flex: 1; text-align: center; }
+            .card-aluno-atv { flex-direction: column; align-items: flex-start; gap: 10px; }
+            .btn-acao-card { width: 100%; }
+            #tab-escrever .card-aluno-atv { border-left: 4px solid #003058; padding: 12px; }
+            #tab-escrever .card-aluno-atv div:nth-child(2) { flex-direction: column; gap: 10px; }
+            #container-img-apoio { flex: 0 0 auto; width: 100%; max-width: 200px; margin: 10px auto; }
+            .linha-pautada { padding-left: 35px; background-size: 100% 28px; line-height: 28px; }
+            .margem-numerica { width: 25px; font-size: 9px; }
+            .margem-vermelha { left: 30px; }
+            #texto-redacao { font-size: 16px; line-height: 28px; padding: 0 10px; height: 600px; }
+            .margem-numerica div { height: 28px !important; }
+            button[onclick="window.enviarRedacaoFinal()"] { padding: 15px; font-size: 14px; position: sticky; bottom: 10px; z-index: 10; box-shadow: 0 -5px 15px rgba(0,0,0,0.1); }
+        }
+
+        /* Bloqueio de Seleção Mobile */
+        * {
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none !important;
+        }
+        #texto-redacao {
+            -webkit-user-select: none !important;
+            -khtml-user-select: none !important;
+            -moz-user-select: none !important;
+            -ms-user-select: none !important;
+            user-select: none !important;
+        }
+        #texto-redacao:focus {
+            -webkit-user-select: text !important;
+            user-select: text !important;
+        }
+
     </style>
 
     <div class="container-escrita">
@@ -465,9 +512,9 @@ window.Router.register('escritaalunoclm', async () => {
                     <div id="salvamento-status">Alterações salvas automaticamente</div>
                 </div>
                 <div class="linha-pautada">
-                    <div class="margem-numerica">${Array.from({ length: 25 }, (_, i) => `<div style="height: 30px;">${(i + 1)}</div>`).join('')}</div>
+                    <div class="margem-numerica">${Array.from({ length: 25 }, (_, i) => `<div class="num-linha" style="height: 30px; display: flex; align-items: center; justify-content: center;">${(i + 1)}</div>`).join('')}</div>
                     <div class="margem-vermelha"></div>
-                    <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
+                    <textarea id="texto-redacao" spellcheck="false" oncopy="return false" onpaste="return false" oncut="return false" oncontextmenu="return false" placeholder="Inicie sua escrita aqui..."></textarea>
                 </div>
             </div>
             <button onclick="window.enviarRedacaoFinal()" style="width:100%; max-width:850px; margin: 20px auto; display:block; background:#003058; color:white; padding:18px; border:none; border-radius:12px; font-weight:800; cursor:pointer;">ENVIAR REDAÇÃO</button>
