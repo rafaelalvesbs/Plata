@@ -462,19 +462,19 @@ window.Router.register('escritaalunoclm', async () => {
         .scroll-content {
             position: relative;
             width: 100%;
-            min-height: 1100px; /* Tamanho real proporcional ao A4 */
+            height: 800px;
             background-image: linear-gradient(#e5e7eb 1px, transparent 1px); 
             background-size: 100% 32px; 
             padding-left: 55px;
             box-sizing: border-box;
+            overflow: hidden;
         }
 
         #texto-redacao { 
             -webkit-user-select: text; 
             user-select: text; 
             width: 100%; 
-            height: 100%; 
-            min-height: 1100px;
+            height: 800px;
             background: transparent; 
             border: none; 
             outline: none; 
@@ -636,7 +636,7 @@ window.Router.register('escritaalunoclm', async () => {
                             <div style="height: 32px;">21</div><div style="height: 32px;">22</div><div style="height: 32px;">23</div><div style="height: 32px;">24</div><div style="height: 32px;">25</div>
                         </div>
                         <div class="margem-vermelha"></div>
-                        <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
+                        <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..." style="overflow: hidden;"></textarea>
                     </div>
                 </div>
             </div>
