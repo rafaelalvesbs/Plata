@@ -399,11 +399,21 @@ window.Router.register('escritaalunoclm', async () => {
 
     return `
     <style>
-        .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-user-select: none; user-select: none; padding: 10px; overflow-x: hidden; }
+        .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; padding: 15px; margin: 0; }
         .header-prof h1 { text-transform: uppercase; color: #003058; font-weight: 900; margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); }
-        .pill-tab-container { display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding: 5px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .pill-tab-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 25px; width: 100%;}
         .pill-tab-container::-webkit-scrollbar { display: none; }
-        .pill-tab { padding: 12px 20px; border-radius: 50px; border: none; font-weight: 700; font-size: 11px; cursor: pointer; transition: 0.3s; white-space: nowrap; flex-shrink: 0; }
+        .pill-tab { 
+    padding: 10px 2px; 
+    border-radius: 8px; 
+    border: none; 
+    font-weight: 700; 
+    font-size: 9px; 
+    cursor: pointer; 
+    transition: 0.3s; 
+    text-align: center; 
+    width: 100%; 
+}
         .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
         .pill-inactive { background: #e2e8f0; color: #64748b; }
 
@@ -511,10 +521,7 @@ window.Router.register('escritaalunoclm', async () => {
                 font-size: 13px;
                 text-align: center;
             }
-            .pill-tab { 
-                padding: 10px 16px; 
-                font-size: 10px; 
-            }
+                
             .folha-caderno { border-radius: 0; border-left: none; border-right: none; }
         }
 
