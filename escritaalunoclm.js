@@ -66,13 +66,21 @@ window.Router.register('escritaalunoclm', async () => {
         const tabs = ['recebidas', 'escrever', 'enviadas'];
         
         if (tab === 'escrever' && !propostaAtiva) {
-            // Tenta recuperar do rascunho se não houver proposta ativa (abertura direta)
             const rascunho = localStorage.getItem(`rascunho_redacao_${user.uid}`);
-            document.getElementById('texto-redacao').value = rascunho || "";
-            document.getElementById('tema-dinamico').innerText = "Selecione uma atividade para começar...";
-            document.getElementById('prazo-dinamico').innerText = "--/--/--";
-            document.getElementById('container-img-apoio').style.display = 'none';
-            document.getElementById('contador-palavras').innerText = rascunho ? rascunho.trim().split(/\s+/).length : "0";
+            const textarea = document.getElementById('texto-redacao');
+            if(textarea) textarea.value = rascunho || "";
+            
+            const temaDinamico = document.getElementById('tema-dinamico');
+            if(temaDinamico) temaDinamico.innerText = "Selecione uma atividade para começar...";
+            
+            const prazoDinamico = document.getElementById('prazo-dinamico');
+            if(prazoDinamico) prazoDinamico.innerText = "--/--/--";
+            
+            const imgCont = document.getElementById('container-img-apoio');
+            if(imgCont) imgCont.style.display = 'none';
+
+            const contador = document.getElementById('contador-palavras');
+            if(contador) contador.innerText = rascunho ? rascunho.trim().split(/\s+/).length : "0";
         }
 
         tabs.forEach(t => {
@@ -84,6 +92,7 @@ window.Router.register('escritaalunoclm', async () => {
                 btn.classList.toggle('pill-inactive', t !== tab);
             }
         });
+
         if (tab === 'enviadas') carregarEnviadas();
         if (tab === 'recebidas') carregarPropostasDisponiveis();
     };
@@ -125,9 +134,10 @@ window.Router.register('escritaalunoclm', async () => {
             propostasPagina.forEach(data => {
                 const prazoF = data.prazo ? new Date(data.prazo).toLocaleDateString('pt-BR') : 'Sem prazo';
                 const hoje = new Date();
-                hoje.setHours(0, 0, 0, 0); // Zera as horas para comparar apenas os dias
+                hoje.setHours(0, 0, 0, 0);
                 const dataPrazo = data.prazo ? new Date(data.prazo) : null;
                 const prazoVencido = dataPrazo && hoje > dataPrazo;
+                
                 const card = document.createElement('div');
                 card.className = 'card-aluno-atv';
                 card.style.marginBottom = "10px";
@@ -140,19 +150,19 @@ window.Router.register('escritaalunoclm', async () => {
                     </div>
                     <button class="btn-acao-card" style="margin-left: auto;">ESCREVER</button>
                 `;
+                
                 if (prazoVencido) {
-                card.style.opacity = '0.6';
-                card.style.cursor = 'not-allowed';
-                card.querySelector('.btn-acao-card').innerText = 'PRAZO ENCERRADO';
-                card.querySelector('.btn-acao-card').style.background = '#94a3b8';
-    
-                card.onclick = (e) => {
-                e.stopPropagation();
-                window.mostrarAviso("Prazo Encerrado", "Esta atividade expirou e não pode mais ser iniciada.", "erro");
-                };
+                    card.style.opacity = '0.6';
+                    card.style.cursor = 'not-allowed';
+                    card.querySelector('.btn-acao-card').innerText = 'PRAZO ENCERRADO';
+                    card.querySelector('.btn-acao-card').style.background = '#94a3b8';
+                    card.onclick = (e) => {
+                        e.stopPropagation();
+                        window.mostrarAviso("Prazo Encerrado", "Esta atividade expirou e não pode mais ser iniciada.", "erro");
+                    };
                 } else {
-                card.onclick = () => abrirEditorComProposta(data);
-            }
+                    card.onclick = () => abrirEditorComProposta(data);
+                }
                 container.appendChild(card);
             });
 
@@ -180,28 +190,31 @@ window.Router.register('escritaalunoclm', async () => {
         propostaAtiva = proposta;
         window.switchTabEscrita('escrever');
         
-        // Verifica se há rascunho salvo para ESTA atividade específica ou carrega o texto original
-        const rascunhoSalvo = localStorage.getItem(`rascunho_${proposta.id || proposta.idOriginal}_${user.uid}`);
+        const idKey = proposta.idOriginal || proposta.id;
+        const rascunhoSalvo = localStorage.getItem(`rascunho_${idKey}_${user.uid}`);
         
-        document.getElementById('texto-redacao').value = rascunhoSalvo || proposta.textoOriginal || "";
-        document.getElementById('tema-dinamico').innerText = proposta.conteudo || proposta.titulo || "Redação";
+        const textarea = document.getElementById('texto-redacao');
+        if(textarea) textarea.value = rascunhoSalvo || proposta.textoOriginal || "";
+        
+        const temaDinamico = document.getElementById('tema-dinamico');
+        if(temaDinamico) temaDinamico.innerText = proposta.conteudo || proposta.titulo || "Redação";
         
         const prazoElement = document.getElementById('prazo-dinamico');
-        if (proposta.prazo) {
-            prazoElement.innerText = new Date(proposta.prazo).toLocaleDateString('pt-BR');
-        } else {
-            prazoElement.innerText = '--/--/--';
+        if (prazoElement) {
+            prazoElement.innerText = proposta.prazo ? new Date(proposta.prazo).toLocaleDateString('pt-BR') : '--/--/--';
         }
         
         const imgCont = document.getElementById('container-img-apoio');
         const imgTag = document.getElementById('img-apoio-dinamica');
         
-        if (proposta.imagemApoio && proposta.imagemApoio !== "") { 
-            imgTag.src = proposta.imagemApoio; 
-            imgCont.style.display = 'block'; 
-        } else { 
-            imgCont.style.display = 'none'; 
-            imgTag.src = "";
+        if (imgCont && imgTag) {
+            if (proposta.imagemApoio && proposta.imagemApoio !== "") { 
+                imgTag.src = proposta.imagemApoio; 
+                imgCont.style.display = 'block'; 
+            } else { 
+                imgCont.style.display = 'none'; 
+                imgTag.src = "";
+            }
         }
         
         window.scrollTo(0, 0);
@@ -215,22 +228,22 @@ window.Router.register('escritaalunoclm', async () => {
 
         if (textarea) {
             textarea.oninput = () => {
-                // Lógica de limite de linhas
                 const linhas = textarea.value.split('\n');
-                if (linhas.length > 25) { textarea.value = linhas.slice(0, 25).map(l => l.substring(0, 90)).join('\n'); }
+                if (linhas.length > 25) { 
+                    textarea.value = linhas.slice(0, 25).map(l => l.substring(0, 90)).join('\n'); 
+                }
                 
                 const texto = textarea.value;
                 const textoTrim = texto.trim();
                 
-                // Atualiza contador de palavras
-                wordCountSpan.innerText = textoTrim ? textoTrim.split(/\s+/).length : 0;
+                if(wordCountSpan) {
+                    wordCountSpan.innerText = textoTrim ? textoTrim.split(/\s+/).length : 0;
+                }
 
-                // --- SALVAMENTO AUTOMÁTICO (LocalStorage) ---
                 if (propostaAtiva) {
                     const idKey = propostaAtiva.idOriginal || propostaAtiva.id;
                     localStorage.setItem(`rascunho_${idKey}_${user.uid}`, texto);
                     
-                    // Feedback visual sutil de salvamento
                     if (saveIndicator) {
                         saveIndicator.innerText = "Alterações salvas automaticamente";
                         saveIndicator.style.opacity = "1";
@@ -241,7 +254,7 @@ window.Router.register('escritaalunoclm', async () => {
             };
             
             const textoInicial = textarea.value.trim();
-            wordCountSpan.innerText = textoInicial ? textoInicial.split(/\s+/).length : 0;
+            if(wordCountSpan) wordCountSpan.innerText = textoInicial ? textoInicial.split(/\s+/).length : 0;
         }
     }
 
@@ -283,7 +296,6 @@ window.Router.register('escritaalunoclm', async () => {
                 window.mostrarAviso("Enviado!", "Sua redação foi entregue.", "sucesso");
             }
             
-            // Limpa o rascunho do localStorage após enviar com sucesso
             localStorage.removeItem(`rascunho_${idReferencia}_${user.uid}`);
             
             textarea.value = "";
@@ -292,7 +304,7 @@ window.Router.register('escritaalunoclm', async () => {
             window.switchTabEscrita('enviadas');
         } catch (e) { 
             console.error(e);
-            window.mostrarAviso("Proibido escrever redação por sí!", "Você só pode escrever aqui as redações que o professor enviou.", "erro"); 
+            window.mostrarAviso("Erro ao enviar", "Não foi possível enviar sua redação. Verifique sua conexão.", "erro"); 
         }
     };
 
@@ -388,22 +400,11 @@ window.Router.register('escritaalunoclm', async () => {
 
     setTimeout(carregarPropostasDisponiveis, 300);
 
-    setTimeout(() => {
-        const checkDOM = setInterval(() => {
-            if (document.getElementById('lista-propostas-recebidas')) {
-                carregarPropostasDisponiveis();
-                clearInterval(checkDOM);
-            }
-        }, 100);
-    }, 200);
-
     return `
     <style>
-    /* 1. ESTRUTURA GERAL */
     .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; padding: 15px; margin: 0; }
     .header-prof h1 { text-transform: uppercase; color: #003058; font-weight: 900; margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); }
     
-    /* 2. ABAS (PILLS) */
     .pill-tab-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 25px; width: 100%;}
     .pill-tab { padding: 10px 2px; border-radius: 8px; border: none; font-weight: 700; font-size: 9px; cursor: pointer; transition: 0.3s; text-align: center; width: 100%; }
     .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
@@ -412,13 +413,11 @@ window.Router.register('escritaalunoclm', async () => {
     #tab-escrever, #tab-recebidas, #tab-enviadas { width: 100%; max-width: none; margin: 0; animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* 3. TEMA E PROPOSTA (CARD DE TOPO) */
     #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
     .layout-proposta-flex { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
     #container-img-apoio { width: 100%; display: none; }
     #img-apoio-dinamica { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; }
 
-    /* 4. A FOLHA DE REDAÇÃO - PADRÃO (DESKTOP) */
     .folha-caderno { 
         background: #fff; 
         border-radius: 4px; 
@@ -446,7 +445,6 @@ window.Router.register('escritaalunoclm', async () => {
         box-sizing: border-box;
     }
 
-    /* 5. NÚMEROS DAS LINHAS */
     .margem-numerica { 
         position: absolute; 
         left: 0; 
@@ -470,7 +468,6 @@ window.Router.register('escritaalunoclm', async () => {
 
     .margem-vermelha { position: absolute; left: 55px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; z-index: 1; }
 
-    /* 6. ÁREA DE TEXTO */
     #texto-redacao { 
         width: 100%; 
         height: 100%;
@@ -488,7 +485,6 @@ window.Router.register('escritaalunoclm', async () => {
         overflow-y: auto;
     }
 
-    /* 7. BOTÕES (AÇÃO E ENVIAR FINAL) */
     .btn-enviar-final {
         width: 100%; 
         margin: 20px auto; 
@@ -503,7 +499,6 @@ window.Router.register('escritaalunoclm', async () => {
         transition: 0.3s;
     }
 
-    /* Botão Editar/Ação dentro dos Cards das Listas */
     .btn-acao-card {
         background: #003058;
         color: white;
@@ -521,7 +516,6 @@ window.Router.register('escritaalunoclm', async () => {
     .btn-enviar-final:hover, .btn-acao-card:hover { background: #004075; transform: translateY(-1px); }
     .btn-enviar-final:active, .btn-acao-card:active { transform: translateY(0); }
 
-    /* 8. CARDS DE LISTAGEM (REDAÇÕES RECEBIDAS/ENVIADAS) */
     .card-aluno-atv { 
         background: white; 
         padding: 16px; 
@@ -535,11 +529,6 @@ window.Router.register('escritaalunoclm', async () => {
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
 
-    /* ============================================================
-       9. RESPONSIVIDADE
-       ============================================================ */
-    
-    /* MOBILE */
     @media (max-width: 600px) {
         .folha-caderno { 
             height: 500px !important; 
@@ -575,7 +564,6 @@ window.Router.register('escritaalunoclm', async () => {
         }
     }
 
-    /* DESKTOP */
     @media (min-width: 768px) {
         .layout-proposta-flex { flex-direction: row; align-items: flex-start; }
         #container-img-apoio { flex: 0 0 180px; order: 2; display: block; }
@@ -585,7 +573,6 @@ window.Router.register('escritaalunoclm', async () => {
             max-width: 800px;
         }
 
-        /* Garante que o card de proposta selecionada tenha o mesmo max-width do editor */
         .card-topo-proposta {
             max-width: 800px;
             margin: 0 auto 20px auto !important;
@@ -619,7 +606,7 @@ window.Router.register('escritaalunoclm', async () => {
                 <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
             </div>
             <div class="layout-proposta-flex">
-                <div id="container-img-apoio">
+                <div id="container-img-apoio" style="display:none;">
                     <img id="img-apoio-dinamica" src="" style="width:100%; border-radius:8px;">
                 </div>
                 <p id="tema-dinamico">Selecione uma atividade para começar...</p>
@@ -653,7 +640,8 @@ window.Router.register('escritaalunoclm', async () => {
     </div>
 
     <div id="tab-enviadas" style="display:none;">
-        <div id="lista-redacoes-enviadas"></div>
+        <div id="lista-redacoes-enviadas">
+            </div>
     </div>
 </div>`;
 });
