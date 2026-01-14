@@ -304,7 +304,7 @@ window.Router.register('escritaalunoclm', async () => {
             window.switchTabEscrita('enviadas');
         } catch (e) { 
             console.error(e);
-            window.mostrarAviso("Erro ao enviar", "Não foi possível enviar sua redação. Verifique sua conexão.", "erro"); 
+            window.mostrarAviso("Erro ao enviar", "Não foi possível enviar sua redação.", "erro"); 
         }
     };
 
@@ -340,7 +340,6 @@ window.Router.register('escritaalunoclm', async () => {
                 const card = document.createElement('div');
                 card.className = 'card-aluno-atv';
                 card.style.marginBottom = "10px";
-                card.style.opacity = podeEditar ? '1' : '0.9';
                 
                 card.innerHTML = `
                     <div style="flex:1; min-width: 200px;">
@@ -348,7 +347,7 @@ window.Router.register('escritaalunoclm', async () => {
                         <p style="font-size:11px; color:#64748b; margin-top:4px;">Enviado em: ${red.data} ${statusBadge}</p>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        ${podeEditar ? `<button class="btn-acao-card btn-editar" style="background:#003058;">EDITAR</button>` : `<i class="fa-solid fa-lock" style="color:#94a3b8; font-size:1.2rem;" title="Bloqueado pelo Professor"></i>`}
+                        ${podeEditar ? `<button class="btn-acao-card btn-editar" style="background:#003058;">EDITAR</button>` : `<i class="fa-solid fa-lock" style="color:#94a3b8; font-size:1.2rem;" title="Bloqueado"></i>`}
                     </div>
                 `;
 
@@ -356,25 +355,15 @@ window.Router.register('escritaalunoclm', async () => {
                     card.querySelector('.btn-editar').onclick = async () => {
                         const realTimeDoc = await fs.getDoc(fs.doc(db, "redacoes", red.id));
                         if (realTimeDoc.exists() && realTimeDoc.data().status !== 'pendente') {
-                            window.mostrarAviso("Ação Bloqueada", "A correção desta redação já foi finalizada.", "erro");
+                            window.mostrarAviso("Ação Bloqueada", "A correção já iniciou.", "erro");
                             carregarEnviadas(); 
                             return;
                         }
-
-                        let prazoOriginal = null;
-                        if (red.atividadeId) {
-                            const atvSnap = await fs.getDoc(fs.doc(db, "atividades_enviadas", red.atividadeId));
-                            if (atvSnap.exists()) {
-                                prazoOriginal = atvSnap.data().prazo;
-                            }
-                        }
-
                         abrirEditorComProposta({
                             idOriginal: red.id,
                             atividadeId: red.atividadeId,
                             tituloAtividade: red.tituloAtividade,
                             textoOriginal: red.texto,
-                            prazo: prazoOriginal,
                             conteudo: red.tituloAtividade,
                             imagemApoio: null
                         });
@@ -402,246 +391,89 @@ window.Router.register('escritaalunoclm', async () => {
 
     return `
     <style>
-    .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; padding: 15px; margin: 0; }
-    .header-prof h1 { text-transform: uppercase; color: #003058; font-weight: 900; margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); }
-    
-    .pill-tab-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 25px; width: 100%;}
-    .pill-tab { padding: 10px 2px; border-radius: 8px; border: none; font-weight: 700; font-size: 9px; cursor: pointer; transition: 0.3s; text-align: center; width: 100%; }
-    .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
-    .pill-inactive { background: #e2e8f0; color: #64748b; }
-
-    #tab-escrever, #tab-recebidas, #tab-enviadas { width: 100%; max-width: none; margin: 0; animation: fadeIn 0.4s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-    #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
-    .layout-proposta-flex { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
-    #container-img-apoio { width: 100%; display: none; }
-    #img-apoio-dinamica { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; }
-
-    .folha-caderno { 
-        background: #fff; 
-        border-radius: 4px; 
-        box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
-        border: 1px solid #c1c5cb; 
-        width: 100%; 
-        max-width: 800px; 
-        margin: 0 auto; 
-        position: relative;
-        overflow: hidden;
-        height: 835px; 
-        display: flex;
-        flex-direction: column;
-    } 
-
-    .linha-pautada { position: relative; flex: 1; background-color: #fff; overflow: hidden; }
-
-    .scroll-content {
-        position: relative;
-        width: 100%;
-        height: 100%; 
-        background-image: linear-gradient(#e5e7eb 1px, transparent 1px); 
-        background-size: 100% 32px; 
-        padding-left: 55px;
-        box-sizing: border-box;
-    }
-
-    .margem-numerica { 
-        position: absolute; 
-        left: 0; 
-        top: 0; 
-        width: 45px; 
-        height: 100%;
-        background: #fff;
-        z-index: 2;
-        border-right: 1px solid #fca5a5;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .margem-numerica div {
-        height: 32px !important;
-        line-height: 32px !important;
-        text-align: center;
-        color: #94a3b8;
-        font-size: 11px;
-    }
-
-    .margem-vermelha { position: absolute; left: 55px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; z-index: 1; }
-
-    #texto-redacao { 
-        width: 100%; 
-        height: 100%;
-        background: transparent; 
-        border: none; 
-        outline: none; 
-        resize: none; 
-        font-family: 'Kalam', cursive; 
-        font-size: 19px; 
-        color: #2c3e50; 
-        padding: 0 15px; 
-        line-height: 32px; 
-        display: block; 
-        box-sizing: border-box; 
-        overflow-y: auto;
-    }
-
-    .btn-enviar-final {
-        width: 100%; 
-        margin: 20px auto; 
-        display: block; 
-        background: #003058; 
-        color: white; 
-        padding: 18px; 
-        border: none; 
-        border-radius: 12px; 
-        font-weight: 800; 
-        cursor: pointer;
-        transition: 0.3s;
-    }
-
-    .btn-acao-card {
-        background: #003058;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 12px;
-        cursor: pointer;
-        transition: 0.3s;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-
-    .btn-enviar-final:hover, .btn-acao-card:hover { background: #004075; transform: translateY(-1px); }
-    .btn-enviar-final:active, .btn-acao-card:active { transform: translateY(0); }
-
-    .card-aluno-atv { 
-        background: white; 
-        padding: 16px; 
-        border-radius: 16px; 
-        border: 1px solid #edf2f7; 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        gap: 15px; 
-        margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    @media (max-width: 600px) {
-        .folha-caderno { 
-            height: 500px !important; 
-            border-radius: 0;
-            border-left: none;
-            border-right: none;
+        .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; padding: 15px; margin: 0; }
+        .header-prof h1 { text-transform: uppercase; color: #003058; font-weight: 900; margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); }
+        .pill-tab-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 25px; width: 100%;}
+        .pill-tab { padding: 10px 2px; border-radius: 8px; border: none; font-weight: 700; font-size: 9px; cursor: pointer; transition: 0.3s; text-align: center; width: 100%; }
+        .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
+        .pill-inactive { background: #e2e8f0; color: #64748b; }
+        #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
+        .layout-proposta-flex { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
+        #img-apoio-dinamica { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; }
+        .folha-caderno { background: #fff; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #c1c5cb; width: 100%; max-width: 800px; margin: 0 auto; position: relative; overflow: hidden; height: 835px; display: flex; flex-direction: column; } 
+        .linha-pautada { position: relative; flex: 1; background-color: #fff; overflow: hidden; }
+        .scroll-content { position: relative; width: 100%; height: 100%; background-image: linear-gradient(#e5e7eb 1px, transparent 1px); background-size: 100% 32px; padding-left: 55px; box-sizing: border-box; }
+        .margem-numerica { position: absolute; left: 0; top: 0; width: 45px; height: 100%; background: #fff; z-index: 2; border-right: 1px solid #fca5a5; display: flex; flex-direction: column; }
+        .margem-numerica div { height: 32px !important; line-height: 32px !important; text-align: center; color: #94a3b8; font-size: 11px; }
+        .margem-vermelha { position: absolute; left: 55px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; z-index: 1; }
+        #texto-redacao { width: 100%; height: 100%; background: transparent; border: none; outline: none; resize: none; font-family: 'Kalam', cursive; font-size: 19px; color: #2c3e50; padding: 0 15px; line-height: 32px; display: block; box-sizing: border-box; overflow-y: auto; }
+        .btn-enviar-final { width: 100%; margin: 20px auto; display: block; background: #003058; color: white; padding: 18px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
+        .btn-acao-card { background: #003058; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.3s; text-transform: uppercase; white-space: nowrap; }
+        .card-aluno-atv { background: white; padding: 16px; border-radius: 16px; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
+        @media (max-width: 600px) {
+            .folha-caderno { height: 500px !important; border-radius: 0; border-left: none; border-right: none; }
+            .linha-pautada { overflow-y: scroll !important; -webkit-overflow-scrolling: touch; }
+            .scroll-content { height: 801px !important; min-height: 801px !important; }
+            #texto-redacao { height: 801px !important; overflow: hidden !important; font-size: 18px; }
+            .card-aluno-atv { flex-direction: column; align-items: flex-start; }
+            .btn-acao-card { width: 100%; padding: 14px; }
         }
-
-        .linha-pautada {
-            overflow-y: scroll !important; 
-            -webkit-overflow-scrolling: touch;
+        @media (min-width: 768px) {
+            .layout-proposta-flex { flex-direction: row; align-items: flex-start; }
+            #container-img-apoio { flex: 0 0 180px; order: 2; display: block; }
+            #tema-dinamico { order: 1; }
+            .btn-enviar-final, .card-topo-proposta { max-width: 800px; margin: 0 auto 20px auto !important; }
         }
+    </style>
 
-        .scroll-content {
-            height: 801px !important; 
-            min-height: 801px !important;
-        }
-
-        #texto-redacao {
-            height: 801px !important; 
-            overflow: hidden !important; 
-            font-size: 18px; 
-        }
-
-        .card-aluno-atv { 
-            flex-direction: column; 
-            align-items: flex-start;
-        }
-        
-        .btn-acao-card {
-            width: 100%;
-            padding: 14px;
-        }
-    }
-
-    @media (min-width: 768px) {
-        .layout-proposta-flex { flex-direction: row; align-items: flex-start; }
-        #container-img-apoio { flex: 0 0 180px; order: 2; display: block; }
-        #tema-dinamico { order: 1; }
-        
-        .btn-enviar-final {
-            max-width: 800px;
-        }
-
-        .card-topo-proposta {
-            max-width: 800px;
-            margin: 0 auto 20px auto !important;
-        }
-    }
-</style>
-
-<div class="container-escrita">
-    <div class="header-prof">
-        <h1>ESCRITA</h1>
-        <p style="color:#64748b;">Pratique suas redações</p>
-    </div>
-    
-    <hr style="border:0; border-top:1px solid #e2e8f0; margin:20px 0;">
-    
-    <div class="pill-tab-container">
-        <button id="btn-tab-recebidas" class="pill-tab pill-active" onclick="window.switchTabEscrita('recebidas')">REDAÇÕES RECEBIDAS</button>
-        <button id="btn-tab-escrever" class="pill-tab pill-inactive" onclick="window.switchTabEscrita('escrever')">ESCREVER AGORA</button>
-        <button id="btn-tab-enviadas" class="pill-tab pill-inactive" onclick="window.switchTabEscrita('enviadas')">MINHAS REDAÇÕES</button>
-    </div>
-
-    <div id="tab-recebidas">
-        <div id="lista-propostas-recebidas">
-            </div>
-    </div>
-
-    <div id="tab-escrever" style="display:none;">
-        <div class="card-aluno-atv card-topo-proposta" style="display:block; border-left: 6px solid #003058; width: 100%; box-sizing: border-box;">
-            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                <h2 style="color:#003058; font-size:1.2rem; margin:0;">PROPOSTA SELECIONADA:</h2>
-                <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
-            </div>
-            <div class="layout-proposta-flex">
-                <div id="container-img-apoio" style="display:none;">
-                    <img id="img-apoio-dinamica" src="" style="width:100%; border-radius:8px;">
-                </div>
-                <p id="tema-dinamico">Selecione uma atividade para começar...</p>
-            </div>
+    <div class="container-escrita">
+        <div class="header-prof">
+            <h1>ESCRITA</h1>
+            <p style="color:#64748b;">Pratique suas redações</p>
         </div>
-
-        <div class="folha-caderno">
-            <div style="background:#f1f5f9; padding:8px 20px; font-size:11px; font-weight:800; color:#64748b; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #c1c5cb; position: relative; z-index: 10; height: 35px; box-sizing: border-box;">
-                <div>PALAVRAS: <span id="contador-palavras">0</span> | LIMITE: 25 LINHAS</div>
-                <div id="salvamento-status" style="font-size:10px; color:#003058; font-weight:700; opacity:0; transition:0.3s;">Alterações salvas automaticamente</div>
-            </div>
-
-            <div class="linha-pautada">
-                <div class="scroll-content">
-                    <div class="margem-numerica">
-                        <div>01</div><div>02</div><div>03</div><div>04</div><div>05</div>
-                        <div>06</div><div>07</div><div>08</div><div>09</div><div>10</div>
-                        <div>11</div><div>12</div><div>13</div><div>14</div><div>15</div>
-                        <div>16</div><div>17</div><div>18</div><div>19</div><div>20</div>
-                        <div>21</div><div>22</div><div>23</div><div>24</div><div>25</div>
+        <hr style="border:0; border-top:1px solid #e2e8f0; margin:20px 0;">
+        <div class="pill-tab-container">
+            <button id="btn-tab-recebidas" class="pill-tab pill-active" onclick="window.switchTabEscrita('recebidas')">REDAÇÕES RECEBIDAS</button>
+            <button id="btn-tab-escrever" class="pill-tab pill-inactive" onclick="window.switchTabEscrita('escrever')">ESCREVER AGORA</button>
+            <button id="btn-tab-enviadas" class="pill-tab pill-inactive" onclick="window.switchTabEscrita('enviadas')">MINHAS REDAÇÕES</button>
+        </div>
+        <div id="tab-recebidas">
+            <div id="lista-propostas-recebidas"></div>
+        </div>
+        <div id="tab-escrever" style="display:none;">
+            <div class="card-aluno-atv card-topo-proposta" style="display:block; border-left: 6px solid #003058; width: 100%; box-sizing: border-box;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                    <h2 style="color:#003058; font-size:1.2rem; margin:0;">PROPOSTA SELECIONADA:</h2>
+                    <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
+                </div>
+                <div class="layout-proposta-flex">
+                    <div id="container-img-apoio" style="display:none;">
+                        <img id="img-apoio-dinamica" src="">
                     </div>
-                    
-                    <div class="margem-vermelha"></div>
-                    
-                    <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
+                    <p id="tema-dinamico">Selecione uma atividade para começar...</p>
                 </div>
             </div>
-        </div>
-
-        <button class="btn-enviar-final" onclick="window.enviarRedacaoFinal()">ENVIAR REDAÇÃO</button>
-    </div>
-
-    <div id="tab-enviadas" style="display:none;">
-        <div id="lista-redacoes-enviadas">
+            <div class="folha-caderno">
+                <div style="background:#f1f5f9; padding:8px 20px; font-size:11px; font-weight:800; color:#64748b; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #c1c5cb; height: 35px; box-sizing: border-box;">
+                    <div>PALAVRAS: <span id="contador-palavras">0</span> | LIMITE: 25 LINHAS</div>
+                    <div id="salvamento-status" style="font-size:10px; color:#003058; font-weight:700; opacity:0; transition:0.3s;">Salvo automaticamente</div>
+                </div>
+                <div class="linha-pautada">
+                    <div class="scroll-content">
+                        <div class="margem-numerica">
+                            <div>01</div><div>02</div><div>03</div><div>04</div><div>05</div><div>06</div><div>07</div><div>08</div><div>09</div><div>10</div>
+                            <div>11</div><div>12</div><div>13</div><div>14</div><div>15</div><div>16</div><div>17</div><div>18</div><div>19</div><div>20</div>
+                            <div>21</div><div>22</div><div>23</div><div>24</div><div>25</div>
+                        </div>
+                        <div class="margem-vermelha"></div>
+                        <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
+                    </div>
+                </div>
             </div>
-    </div>
-</div>`;
+            <button class="btn-enviar-final" onclick="window.enviarRedacaoFinal()">ENVIAR REDAÇÃO</button>
+        </div>
+        <div id="tab-enviadas" style="display:none;">
+            <div id="lista-redacoes-enviadas"></div>
+        </div>
+    </div>`;
 });
