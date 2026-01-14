@@ -405,7 +405,6 @@ window.Router.register('escritaalunoclm', async () => {
     
     /* 2. ABAS (PILLS) */
     .pill-tab-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 25px; width: 100%;}
-    .pill-tab-container::-webkit-scrollbar { display: none; }
     .pill-tab { padding: 10px 2px; border-radius: 8px; border: none; font-weight: 700; font-size: 9px; cursor: pointer; transition: 0.3s; text-align: center; width: 100%; }
     .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
     .pill-inactive { background: #e2e8f0; color: #64748b; }
@@ -413,13 +412,13 @@ window.Router.register('escritaalunoclm', async () => {
     #tab-escrever, #tab-recebidas, #tab-enviadas { width: 100%; max-width: none; margin: 0; animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* 3. TEMA E PROPOSTA */
+    /* 3. TEMA E PROPOSTA (CARD DE TOPO) */
     #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
     .layout-proposta-flex { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
     #container-img-apoio { width: 100%; display: none; }
-    #img-apoio-dinamica { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    #img-apoio-dinamica { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; }
 
-    /* 4. A FOLHA DE REDAÇÃO (AJUSTADO PARA 25 LINHAS VISÍVEIS) */
+    /* 4. A FOLHA DE REDAÇÃO - PADRÃO (DESKTOP) */
     .folha-caderno { 
         background: #fff; 
         border-radius: 4px; 
@@ -430,17 +429,12 @@ window.Router.register('escritaalunoclm', async () => {
         margin: 0 auto; 
         position: relative;
         overflow: hidden;
-        height: 835px; /* Altura aumentada para caber cabeçalho + 25 linhas */
+        height: 835px; 
         display: flex;
         flex-direction: column;
     } 
 
-    .linha-pautada { 
-        position: relative; 
-        flex: 1; /* Ocupa todo o espaço abaixo do cabeçalho cinza */
-        background-color: #fff;
-        overflow: hidden;
-    }
+    .linha-pautada { position: relative; flex: 1; background-color: #fff; overflow: hidden; }
 
     .scroll-content {
         position: relative;
@@ -450,7 +444,6 @@ window.Router.register('escritaalunoclm', async () => {
         background-size: 100% 32px; 
         padding-left: 55px;
         box-sizing: border-box;
-        overflow: hidden;
     }
 
     /* 5. NÚMEROS DAS LINHAS */
@@ -469,12 +462,10 @@ window.Router.register('escritaalunoclm', async () => {
 
     .margem-numerica div {
         height: 32px !important;
-        min-height: 32px !important;
         line-height: 32px !important;
         text-align: center;
         color: #94a3b8;
         font-size: 11px;
-        box-sizing: border-box;
     }
 
     .margem-vermelha { position: absolute; left: 55px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; z-index: 1; }
@@ -494,38 +485,111 @@ window.Router.register('escritaalunoclm', async () => {
         line-height: 32px; 
         display: block; 
         box-sizing: border-box; 
-        overflow: hidden;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        overflow-y: auto;
     }
 
-    #texto-redacao::-webkit-scrollbar { display: none; }
+    /* 7. BOTÕES (AÇÃO E ENVIAR FINAL) */
+    .btn-enviar-final {
+        width: 100%; 
+        margin: 20px auto; 
+        display: block; 
+        background: #003058; 
+        color: white; 
+        padding: 18px; 
+        border: none; 
+        border-radius: 12px; 
+        font-weight: 800; 
+        cursor: pointer;
+        transition: 0.3s;
+    }
 
-    /* 7. STATUS E BOTÕES */
-    #salvamento-status { font-size: 10px; color: #003058; font-weight: 700; opacity: 0; transition: opacity 0.3s; }
-    .card-aluno-atv { background: white; padding: 16px; border-radius: 16px; border: 1px solid #edf2f7; display: grid; grid-template-columns: 1fr auto; align-items: center; width: 100%; box-sizing: border-box; gap: 12px; transition: 0.3s; }
-    .card-aluno-atv:active { transform: scale(0.98); }
-    .btn-acao-card { background: #003058; color: white; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 700; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    /* Botão Editar/Ação dentro dos Cards das Listas */
+    .btn-acao-card {
+        background: #003058;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 12px;
+        cursor: pointer;
+        transition: 0.3s;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
 
-    /* 8. RESPONSIVIDADE */
+    .btn-enviar-final:hover, .btn-acao-card:hover { background: #004075; transform: translateY(-1px); }
+    .btn-enviar-final:active, .btn-acao-card:active { transform: translateY(0); }
+
+    /* 8. CARDS DE LISTAGEM (REDAÇÕES RECEBIDAS/ENVIADAS) */
+    .card-aluno-atv { 
+        background: white; 
+        padding: 16px; 
+        border-radius: 16px; 
+        border: 1px solid #edf2f7; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        gap: 15px; 
+        margin-bottom: 12px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
+
+    /* ============================================================
+       9. RESPONSIVIDADE
+       ============================================================ */
+    
+    /* MOBILE */
+    @media (max-width: 600px) {
+        .folha-caderno { 
+            height: 500px !important; 
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+        }
+
+        .linha-pautada {
+            overflow-y: scroll !important; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .scroll-content {
+            height: 801px !important; 
+            min-height: 801px !important;
+        }
+
+        #texto-redacao {
+            height: 801px !important; 
+            overflow: hidden !important; 
+            font-size: 18px; 
+        }
+
+        .card-aluno-atv { 
+            flex-direction: column; 
+            align-items: flex-start;
+        }
+        
+        .btn-acao-card {
+            width: 100%;
+            padding: 14px;
+        }
+    }
+
+    /* DESKTOP */
     @media (min-width: 768px) {
         .layout-proposta-flex { flex-direction: row; align-items: flex-start; }
         #container-img-apoio { flex: 0 0 180px; order: 2; display: block; }
         #tema-dinamico { order: 1; }
-    }
-
-    @media (max-width: 600px) {
-        .folha-caderno { 
-            height: 835px !important; 
-            border-radius: 0; 
-            border-left: none; 
-            border-right: none; 
+        
+        .btn-enviar-final {
+            max-width: 800px;
         }
-        .card-aluno-atv { grid-template-columns: 1fr; padding: 15px; gap: 12px; }
-        .card-aluno-atv div { text-align: left; width: 100%; }
-        .card-aluno-atv strong { font-size: 14px; display: block; line-height: 1.3; }
-        .card-aluno-atv p { font-size: 11px !important; margin-top: 6px !important; }
-        .btn-acao-card { width: 100%; padding: 14px; font-size: 13px; text-align: center; }
+
+        /* Garante que o card de proposta selecionada tenha o mesmo max-width do editor */
+        .card-topo-proposta {
+            max-width: 800px;
+            margin: 0 auto 20px auto !important;
+        }
     }
 </style>
 
@@ -544,18 +608,19 @@ window.Router.register('escritaalunoclm', async () => {
     </div>
 
     <div id="tab-recebidas">
-        <div id="lista-propostas-recebidas"></div>
+        <div id="lista-propostas-recebidas">
+            </div>
     </div>
 
     <div id="tab-escrever" style="display:none;">
-        <div class="card-aluno-atv" style="display:block; margin: 0 auto 20px auto; border-left: 6px solid #003058; height: auto; width: 100%; max-width: 800px; box-sizing: border-box;">
+        <div class="card-aluno-atv card-topo-proposta" style="display:block; border-left: 6px solid #003058; width: 100%; box-sizing: border-box;">
             <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                 <h2 style="color:#003058; font-size:1.2rem; margin:0;">PROPOSTA SELECIONADA:</h2>
                 <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
             </div>
             <div class="layout-proposta-flex">
                 <div id="container-img-apoio">
-                    <img id="img-apoio-dinamica" src="">
+                    <img id="img-apoio-dinamica" src="" style="width:100%; border-radius:8px;">
                 </div>
                 <p id="tema-dinamico">Selecione uma atividade para começar...</p>
             </div>
@@ -564,7 +629,7 @@ window.Router.register('escritaalunoclm', async () => {
         <div class="folha-caderno">
             <div style="background:#f1f5f9; padding:8px 20px; font-size:11px; font-weight:800; color:#64748b; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #c1c5cb; position: relative; z-index: 10; height: 35px; box-sizing: border-box;">
                 <div>PALAVRAS: <span id="contador-palavras">0</span> | LIMITE: 25 LINHAS</div>
-                <div id="salvamento-status">Alterações salvas automaticamente</div>
+                <div id="salvamento-status" style="font-size:10px; color:#003058; font-weight:700; opacity:0; transition:0.3s;">Alterações salvas automaticamente</div>
             </div>
 
             <div class="linha-pautada">
@@ -584,7 +649,7 @@ window.Router.register('escritaalunoclm', async () => {
             </div>
         </div>
 
-        <button onclick="window.enviarRedacaoFinal()" style="width:100%; margin: 20px 0; display:block; background:#003058; color:white; padding:18px; border:none; border-radius:12px; font-weight:800; cursor:pointer;">ENVIAR REDAÇÃO</button>
+        <button class="btn-enviar-final" onclick="window.enviarRedacaoFinal()">ENVIAR REDAÇÃO</button>
     </div>
 
     <div id="tab-enviadas" style="display:none;">
