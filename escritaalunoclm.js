@@ -438,22 +438,43 @@ window.Router.register('escritaalunoclm', async () => {
             overflow: hidden; 
         } 
 
+        .folha-caderno { 
+            background: #fff; 
+            border-radius: 4px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            border: 1px solid #c1c5cb; 
+            width: 100%; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            position: relative;
+            height: 600px; /* Altura fixa do container/janela */
+            overflow: hidden; 
+        } 
+
         .linha-pautada { 
             position: relative; 
-            background: #fff; 
-            padding-left: 55px; 
-            background-image: linear-gradient(#e5e7eb 1px, transparent 1px); 
-            background-size: 100% 32px; 
-            line-height: 32px; 
-            height: 800px; 
-            overflow: hidden;
+            height: 100%;
+            overflow-y: auto; /* Permite o scroll interno */
+            -webkit-overflow-scrolling: touch; /* Scroll suave no mobile */
+            background-color: #fff;
         }
 
-      #texto-redacao { 
+        .scroll-content {
+            position: relative;
+            width: 100%;
+            min-height: 1100px; /* Tamanho real proporcional ao A4 */
+            background-image: linear-gradient(#e5e7eb 1px, transparent 1px); 
+            background-size: 100% 32px; 
+            padding-left: 55px;
+            box-sizing: border-box;
+        }
+
+        #texto-redacao { 
             -webkit-user-select: text; 
             user-select: text; 
             width: 100%; 
-            height: 800px; 
+            height: 100%; 
+            min-height: 1100px;
             background: transparent; 
             border: none; 
             outline: none; 
@@ -467,8 +488,20 @@ window.Router.register('escritaalunoclm', async () => {
             box-sizing: border-box; 
             overflow: hidden;
         }
-        
-        .margem-numerica { position: absolute; left: 0; top: 0; width: clamp(30px, 10vw, 40px); text-align: center; color: #94a3b8; font-size: 11px; border-right: 1px solid #fca5a5; background: #fff; }
+
+        .margem-numerica { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 45px; 
+            text-align: center; 
+            color: #94a3b8; 
+            font-size: 11px; 
+            border-right: 1px solid #fca5a5; 
+            background: #fff;
+            z-index: 2;
+        }
+
         .margem-vermelha { position: absolute; left: clamp(35px, 11vw, 50px); top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; }
         #salvamento-status { font-size: 10px; color: #003058; font-weight: 700; opacity: 0; transition: opacity 0.3s; }
 
@@ -589,20 +622,22 @@ window.Router.register('escritaalunoclm', async () => {
                 </div>
             </div>
             <div class="folha-caderno">
-                <div style="background:#f1f5f9; padding:8px 20px; font-size:11px; font-weight:800; color:#64748b; display:flex; justify-content:space-between; align-items:center;">
+                <div style="background:#f1f5f9; padding:8px 20px; font-size:11px; font-weight:800; color:#64748b; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #c1c5cb; position: relative; z-index: 10;">
                     <div>PALAVRAS: <span id="contador-palavras">0</span> | LIMITE: 25 LINHAS</div>
                     <div id="salvamento-status">Alterações salvas automaticamente</div>
                 </div>
                 <div class="linha-pautada">
-                    <div class="margem-numerica" style="display: block; line-height: 32px; height: 800px; width: 45px;">
-    <div style="height: 30px;">01</div><div style="height: 30px;">02</div><div style="height: 30px;">03</div><div style="height: 30px;">04</div><div style="height: 30px;">05</div>
-    <div style="height: 30px;">06</div><div style="height: 30px;">07</div><div style="height: 30px;">08</div><div style="height: 30px;">09</div><div style="height: 30px;">10</div>
-    <div style="height: 30px;">11</div><div style="height: 30px;">12</div><div style="height: 30px;">13</div><div style="height: 30px;">14</div><div style="height: 30px;">15</div>
-    <div style="height: 30px;">16</div><div style="height: 30px;">17</div><div style="height: 30px;">18</div><div style="height: 30px;">19</div><div style="height: 30px;">20</div>
-    <div style="height: 30px;">21</div><div style="height: 30px;">22</div><div style="height: 30px;">23</div><div style="height: 30px;">24</div><div style="height: 30px;">25</div>
-</div>
-                    <div class="margem-vermelha"></div>
-                    <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
+                    <div class="scroll-content">
+                        <div class="margem-numerica">
+                            <div style="height: 32px;">01</div><div style="height: 32px;">02</div><div style="height: 32px;">03</div><div style="height: 32px;">04</div><div style="height: 32px;">05</div>
+                            <div style="height: 32px;">06</div><div style="height: 32px;">07</div><div style="height: 32px;">08</div><div style="height: 32px;">09</div><div style="height: 32px;">10</div>
+                            <div style="height: 32px;">11</div><div style="height: 32px;">12</div><div style="height: 32px;">13</div><div style="height: 32px;">14</div><div style="height: 32px;">15</div>
+                            <div style="height: 32px;">16</div><div style="height: 32px;">17</div><div style="height: 32px;">18</div><div style="height: 32px;">19</div><div style="height: 32px;">20</div>
+                            <div style="height: 32px;">21</div><div style="height: 32px;">22</div><div style="height: 32px;">23</div><div style="height: 32px;">24</div><div style="height: 32px;">25</div>
+                        </div>
+                        <div class="margem-vermelha"></div>
+                        <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
+                    </div>
                 </div>
             </div>
             <button onclick="window.enviarRedacaoFinal()" style="width:100%; margin: 20px 0; display:block; background:#003058; color:white; padding:18px; border:none; border-radius:12px; font-weight:800; cursor:pointer;">ENVIAR REDAÇÃO</button>
