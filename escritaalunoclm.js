@@ -428,8 +428,34 @@ window.Router.register('escritaalunoclm', async () => {
         #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
         
         .folha-caderno { background: #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #d1d5db; width: 100%; margin: 0 auto; overflow: hidden; }
-        .linha-pautada { position: relative; background: #fff; padding-left: clamp(40px, 12vw, 55px); background-image: linear-gradient(#e5e7eb 1px, transparent 1px); background-size: 100% 30px; line-height: 30px; min-height: 600px; }
-        #texto-redacao { -webkit-user-select: text; user-select: text; width: 100%; height: 600px; background: transparent; border: none; outline: none; resize: none; font-family: 'Kalam', cursive; font-size: 18px; color: #2c3e50; padding: 0 10px; line-height: 30px; display: block; box-sizing: border-box; overflow-y: scroll; }
+        .linha-pautada { 
+    position: relative; 
+    background: #fff; 
+    padding-left: clamp(40px, 12vw, 55px); 
+    background-image: linear-gradient(#e5e7eb 1px, transparent 1px); 
+    background-size: 100% 30px; 
+    line-height: 30px; 
+    height: 750px; 
+    overflow: hidden;
+}
+        #texto-redacao { 
+    -webkit-user-select: text; 
+    user-select: text; 
+    width: 100%; 
+    height: 750px; 
+    background: transparent; 
+    border: none; 
+    outline: none; 
+    resize: none; 
+    font-family: 'Kalam', cursive; 
+    font-size: 18px; 
+    color: #2c3e50; 
+    padding: 0 10px; 
+    line-height: 30px; 
+    display: block; 
+    box-sizing: border-box; 
+    overflow: hidden;
+}
         
         .margem-numerica { position: absolute; left: 0; top: 0; width: clamp(30px, 10vw, 40px); text-align: center; color: #94a3b8; font-size: 11px; border-right: 1px solid #fca5a5; background: #fff; }
         .margem-vermelha { position: absolute; left: clamp(35px, 11vw, 50px); top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; }
@@ -557,7 +583,13 @@ window.Router.register('escritaalunoclm', async () => {
                     <div id="salvamento-status">Alterações salvas automaticamente</div>
                 </div>
                 <div class="linha-pautada">
-                    <div class="margem-numerica">${Array.from({ length: 25 }, (_, i) => `<div style="height: 30px;">${(i + 1)}</div>`).join('')}</div>
+                    <div class="margem-numerica" style="display: block; line-height: 30px; height: 750px;">
+    <div style="height: 30px;">01</div><div style="height: 30px;">02</div><div style="height: 30px;">03</div><div style="height: 30px;">04</div><div style="height: 30px;">05</div>
+    <div style="height: 30px;">06</div><div style="height: 30px;">07</div><div style="height: 30px;">08</div><div style="height: 30px;">09</div><div style="height: 30px;">10</div>
+    <div style="height: 30px;">11</div><div style="height: 30px;">12</div><div style="height: 30px;">13</div><div style="height: 30px;">14</div><div style="height: 30px;">15</div>
+    <div style="height: 30px;">16</div><div style="height: 30px;">17</div><div style="height: 30px;">18</div><div style="height: 30px;">19</div><div style="height: 30px;">20</div>
+    <div style="height: 30px;">21</div><div style="height: 30px;">22</div><div style="height: 30px;">23</div><div style="height: 30px;">24</div><div style="height: 30px;">25</div>
+</div>
                     <div class="margem-vermelha"></div>
                     <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
                 </div>
