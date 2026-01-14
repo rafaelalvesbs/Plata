@@ -216,6 +216,7 @@ window.Router.register('escritaalunoclm', async () => {
                 // Lógica de limite de linhas
                 const linhas = textarea.value.split('\n');
                 if (linhas.length > 25) textarea.value = linhas.slice(0, 25).join('\n');
+                textarea.style.height = '800px';
                 
                 const texto = textarea.value;
                 const textoTrim = texto.trim();
@@ -412,23 +413,97 @@ window.Router.register('escritaalunoclm', async () => {
         #tab-escrever, #tab-recebidas, #tab-enviadas { animation: slideUp 0.3s ease-out; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        .folha-caderno { background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #d1d5db; width: 100%; overflow: hidden; position: relative; }
-        .linha-pautada { position: relative; background: #fff; padding-left: 45px; background-image: linear-gradient(#f1f5f9 1px, transparent 1px); background-size: 100% 32px; line-height: 32px; min-height: 800px; }
-        
-        #texto-redacao { width: 100%; height: 800px; background: transparent; border: none; outline: none; resize: none; font-family: 'Kalam', cursive; font-size: 17px; color: #1e293b; padding: 0 15px; line-height: 32px; box-sizing: border-box; display: block; }
-        
-        .margem-numerica { position: absolute; left: 0; top: 0; width: 35px; text-align: center; color: #cbd5e1; font-size: 10px; border-right: 1px solid #fee2e2; background: #fff; z-index: 2; }
-        .margem-numerica div { height: 32px; display: flex; align-items: center; justify-content: center; }
+        .folha-caderno { 
+            background: #fff; 
+            border-radius: 12px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+            border: 1px solid #d1d5db; 
+            width: 100%; 
+            overflow-x: auto; 
+            position: relative; 
+            background-color: #f1f5f9;
+        }
+        .linha-pautada { 
+            position: relative; 
+            background: #fff; 
+            width: 850px; 
+            height: 800px; 
+            margin: 0 auto;
+            background-image: linear-gradient(#e2e8f0 1px, transparent 1px); 
+            background-size: 100% 32px; 
+            box-sizing: border-box;
+        }
+        #texto-redacao { 
+            width: 100%; 
+            height: 800px; 
+            background: transparent; 
+            border: none; 
+            outline: none; 
+            resize: none; 
+            font-family: 'Kalam', cursive; 
+            font-size: 18px; 
+            color: #1e293b; 
+            padding: 0 20px 0 55px; 
+            line-height: 32px; 
+            box-sizing: border-box; 
+            display: block;
+            overflow: hidden;
+        }
+        .margem-numerica { 
+            position: absolute; 
+            left: 0; 
+            top: 0; 
+            width: 40px; 
+            text-align: center; 
+            color: #94a3b8; 
+            font-size: 11px; 
+            border-right: 1px solid #fee2e2; 
+            background: #fdfdfd; 
+            z-index: 2; 
+            height: 800px;
+        }
+        .margem-numerica div { 
+            height: 32px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            border-bottom: 1px solid #f1f5f9;
+            box-sizing: border-box;
+        }
+
         .margem-vermelha { position: absolute; left: 40px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.6; z-index: 1; }
 
         #salvamento-status { font-size: 9px; color: #10b981; font-weight: 800; opacity: 0; transition: 0.3s; text-transform: uppercase; }
 
+        /* Ajuste para Imagem no Topo (Mobile) e Lado a Lado (Desktop) */
+        .conteudo-proposta-flex {
+            display: flex;
+            flex-direction: column; /* Celular: Imagem em cima, texto embaixo */
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        #container-img-apoio {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        #img-apoio-dinamica {
+            width: 100%;
+            border-radius: 8px;
+            display: block;
+        }
+
         @media (min-width: 768px) {
             .pill-tab-container { display: flex; width: fit-content; }
             .pill-tab { padding: 10px 25px; font-size: 12px; }
-            .card-aluno-atv { flex-direction: row; align-items: center; }
             .btn-acao-card { width: auto; padding: 10px 25px; }
             .container-escrita { padding: 30px; }
+            
+            /* Desktop: Volta a ficar um do lado do outro */
+            .card-aluno-atv { flex-direction: row !important; align-items: center !important; }
+            .conteudo-proposta-flex { flex-direction: row-reverse !important; align-items: flex-start; }
+            #container-img-apoio { flex: 0 0 150px; }
         }
 
     </style>
@@ -450,9 +525,13 @@ window.Router.register('escritaalunoclm', async () => {
                     <h2 style="color:#003058; font-size:1.2rem; margin:0;">PROPOSTA SELECIONADA:</h2>
                     <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
                 </div>
-                <div style="display:flex; gap:20px; margin-top:10px;">
-                    <p id="tema-dinamico">Selecione uma atividade para começar...</p>
-                    <div id="container-img-apoio" style="flex:0 0 150px; display:none;"><img id="img-apoio-dinamica" style="width:100%; border-radius:8px;"></div>
+                <div class="conteudo-proposta-flex">
+                    <div id="container-img-apoio" style="display:none;">
+                        <img id="img-apoio-dinamica" src="">
+                    </div>
+                    <div style="flex: 1;">
+                        <p id="tema-dinamico" style="margin:0; line-height:1.5; color:#475569; font-weight:500;">Selecione uma atividade para começar...</p>
+                    </div>
                 </div>
             </div>
             <div class="folha-caderno">
@@ -461,7 +540,7 @@ window.Router.register('escritaalunoclm', async () => {
                     <div id="salvamento-status">Alterações salvas automaticamente</div>
                 </div>
                 <div class="linha-pautada">
-                    <div class="margem-numerica">${Array.from({ length: 25 }, (_, i) => `<div style="height: 30px;">${(i + 1)}</div>`).join('')}</div>
+                    <div class="margem-numerica">${Array.from({ length: 25 }, (_, i) => `<div>${(i + 1)}</div>`).join('')}</div>
                     <div class="margem-vermelha"></div>
                     <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
                 </div>
