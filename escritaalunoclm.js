@@ -132,13 +132,13 @@ window.Router.register('escritaalunoclm', async () => {
                 card.className = 'card-aluno-atv';
                 card.style.marginBottom = "10px";
                 card.innerHTML = `
-                    <div style="flex: 1; min-width: 200px;">
-                        <strong style="color: #003058;">${data.titulo || "Sem Título"}</strong>
-                        <p style="font-size: 11px; color: ${prazoVencido ? '#dc2626' : '#64748b'}; margin-top: 4px;">
-                        <i class="fa-regular fa-calendar"></i> Prazo: ${prazoF} ${prazoVencido ? '<strong>(VENCIDO)</strong>' : ''}
-                    </p>
+                    <div style="min-width: 0; flex: 1;">
+                        <strong style="color: #003058; display: block; font-size: 14px; line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${data.titulo || "Sem Título"}</strong>
+                        <p style="font-size: 11px; color: ${prazoVencido ? '#dc2626' : '#64748b'}; margin-top: 4px; margin-bottom: 0;">
+                            <i class="fa-regular fa-calendar"></i> Prazo: ${prazoF} ${prazoVencido ? '<strong>(VENCIDO)</strong>' : ''}
+                        </p>
                     </div>
-                    <button class="btn-acao-card">ESCREVER</button>
+                    <button class="btn-acao-card" style="margin-left: auto;">ESCREVER</button>
                 `;
                 if (prazoVencido) {
                 card.style.opacity = '0.6';
@@ -406,12 +406,13 @@ window.Router.register('escritaalunoclm', async () => {
         .pill-tab { padding: 12px 20px; border-radius: 50px; border: none; font-weight: 700; font-size: 11px; cursor: pointer; transition: 0.3s; white-space: nowrap; flex-shrink: 0; }
         .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
         .pill-inactive { background: #e2e8f0; color: #64748b; }
-        
-        .card-aluno-atv { background: white; padding: 15px; border-radius: 16px; border: 1px solid #edf2f7; display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; gap: 10px; transition: 0.3s; }
-        .card-aluno-atv:active { transform: scale(0.98); }
-        .btn-acao-card { background: #003058; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; min-width: 100px; }
 
-        #tab-escrever, #tab-recebidas, #tab-enviadas { width: 100%; max-width: 850px; margin: 0 auto; animation: fadeIn 0.4s ease; }
+        #tab-escrever, #tab-recebidas, #tab-enviadas { 
+            width: 100%; 
+            max-width: none; 
+            margin: 0; 
+            animation: fadeIn 0.4s ease; 
+        }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
         #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
@@ -458,10 +459,62 @@ window.Router.register('escritaalunoclm', async () => {
         }
         #img-apoio-dinamica { width: 100%; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
+        .card-aluno-atv { 
+            background: white; 
+            padding: 16px; 
+            border-radius: 16px; 
+            border: 1px solid #edf2f7; 
+            display: grid; 
+            grid-template-columns: 1fr auto; 
+            align-items: center; 
+            width: 100%; 
+            box-sizing: border-box; 
+            gap: 12px; 
+            transition: 0.3s; 
+        }
+        .card-aluno-atv:active { transform: scale(0.98); }
+        .btn-acao-card { 
+            background: #003058; 
+            color: white; 
+            border: none; 
+            padding: 10px 18px; 
+            border-radius: 10px; 
+            font-weight: 700; 
+            font-size: 12px; 
+            cursor: pointer; 
+            white-space: nowrap;
+        }
+
+        /* RESPONSIVIDADE ESPECÍFICA PARA CELULAR */
         @media (max-width: 600px) {
-            .card-aluno-atv { flex-direction: column; text-align: center; }
-            .btn-acao-card { width: 100%; margin-top: 5px; }
-            #tema-dinamico { font-size: 13px; }
+            .card-aluno-atv { 
+                grid-template-columns: 1fr; 
+                padding: 15px; 
+                gap: 12px; 
+            }
+            .card-aluno-atv div {
+                text-align: left;
+                width: 100%;
+            }
+            .card-aluno-atv strong {
+                font-size: 14px;
+                display: block;
+                line-height: 1.3;
+            }
+            .card-aluno-atv p {
+                font-size: 11px !important;
+                margin-top: 6px !important;
+            }
+            .btn-acao-card { 
+                width: 100%; 
+                padding: 14px; 
+                font-size: 13px;
+                text-align: center;
+            }
+            .pill-tab { 
+                padding: 10px 16px; 
+                font-size: 10px; 
+            }
             .folha-caderno { border-radius: 0; border-left: none; border-right: none; }
         }
 
@@ -479,7 +532,7 @@ window.Router.register('escritaalunoclm', async () => {
         <div id="tab-recebidas"><div id="lista-propostas-recebidas"></div></div>
 
         <div id="tab-escrever" style="display:none;">
-            <div class="card-aluno-atv" style="display:block; margin-bottom:20px; border-left: 6px solid #003058; height: auto;">
+            <div class="card-aluno-atv" style="display:block; margin-bottom:20px; border-left: 6px solid #003058; height: auto; width: 100%; max-width: none;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <h2 style="color:#003058; font-size:1.2rem; margin:0;">PROPOSTA SELECIONADA:</h2>
                     <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
@@ -502,7 +555,7 @@ window.Router.register('escritaalunoclm', async () => {
                     <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
                 </div>
             </div>
-            <button onclick="window.enviarRedacaoFinal()" style="width:100%; max-width:850px; margin: 20px auto; display:block; background:#003058; color:white; padding:18px; border:none; border-radius:12px; font-weight:800; cursor:pointer;">ENVIAR REDAÇÃO</button>
+            <button onclick="window.enviarRedacaoFinal()" style="width:100%; margin: 20px 0; display:block; background:#003058; color:white; padding:18px; border:none; border-radius:12px; font-weight:800; cursor:pointer;">ENVIAR REDAÇÃO</button>
         </div>
 
         <div id="tab-enviadas" style="display:none;"><div id="lista-redacoes-enviadas"></div></div>
