@@ -214,7 +214,9 @@ window.Router.register('calendarioclm', async () => {
     };
 
     const atualizarCalendarioCompleto = () => {
-        const nomeMesAno = dataAtual.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' });
+        const mesNome = dataAtual.toLocaleDateString('pt-BR', { month: 'long' });
+        const anoNome = dataAtual.getFullYear();
+        const nomeMesAno = `${mesNome.charAt(0).toUpperCase() + mesNome.slice(1)} - ${anoNome}`;
         const elTitulo = document.getElementById('titulo-mes-ano');
         if (elTitulo) elTitulo.innerText = nomeMesAno;
         renderizarDias();
@@ -272,7 +274,7 @@ window.Router.register('calendarioclm', async () => {
         <div class="cal-layout-grid">
             <div class="cal-card-unified">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px;">
-                    <h2 id="titulo-mes-ano" style="color: ${azulPadrao}; text-transform: capitalize; margin:0; font-size: 1.2rem; font-weight: 800;">Carregando...</h2>
+                    <h2 id="titulo-mes-ano" style="color: ${azulPadrao}; margin:0; font-size: 1.2rem; font-weight: 800;">Carregando...</h2>
                     <div style="display: flex; gap: 8px;">
                         <button onclick="window.navegarMes(-1)" style="width: 38px; height: 38px; background: #f1f5f9; color: ${azulPadrao}; border:none; cursor:pointer; border-radius:10px;"><i class="fa-solid fa-chevron-left"></i></button>
                         <button onclick="window.navegarMes(1)" style="width: 38px; height: 38px; background: #f1f5f9; color: ${azulPadrao}; border:none; cursor:pointer; border-radius:10px;"><i class="fa-solid fa-chevron-right"></i></button>
