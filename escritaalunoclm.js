@@ -195,11 +195,13 @@ window.Router.register('escritaalunoclm', async () => {
         
         const imgCont = document.getElementById('container-img-apoio');
         const imgTag = document.getElementById('img-apoio-dinamica');
-        if(proposta.imagemApoio) { 
+        
+        if (proposta.imagemApoio && proposta.imagemApoio !== "") { 
             imgTag.src = proposta.imagemApoio; 
             imgCont.style.display = 'block'; 
         } else { 
             imgCont.style.display = 'none'; 
+            imgTag.src = "";
         }
         
         window.scrollTo(0, 0);
@@ -216,7 +218,6 @@ window.Router.register('escritaalunoclm', async () => {
                 // Lógica de limite de linhas
                 const linhas = textarea.value.split('\n');
                 if (linhas.length > 25) textarea.value = linhas.slice(0, 25).join('\n');
-                textarea.style.height = '800px';
                 
                 const texto = textarea.value;
                 const textoTrim = texto.trim();
@@ -398,112 +399,70 @@ window.Router.register('escritaalunoclm', async () => {
 
     return `
     <style>
-        .container-escrita { width: 100%; max-width: 1000px; margin: 0 auto; padding: 15px; box-sizing: border-box; font-family: 'Inter', sans-serif; background: #f8fafc; min-height: 100vh; }
-        .header-prof { margin-bottom: 20px; }
-        .header-prof h1 { color: #003058; font-weight: 900; font-size: 24px; letter-spacing: -0.5px; }
+        .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; -webkit-user-select: none; user-select: none; padding: 10px; overflow-x: hidden; }
+        .header-prof h1 { text-transform: uppercase; color: #003058; font-weight: 900; margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); }
+        .pill-tab-container { display: flex; gap: 8px; margin-bottom: 25px; overflow-x: auto; padding: 5px 2px; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+        .pill-tab-container::-webkit-scrollbar { display: none; }
+        .pill-tab { padding: 12px 20px; border-radius: 50px; border: none; font-weight: 700; font-size: 11px; cursor: pointer; transition: 0.3s; white-space: nowrap; flex-shrink: 0; }
+        .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
+        .pill-inactive { background: #e2e8f0; color: #64748b; }
         
-        .pill-tab-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; background: #e2e8f0; padding: 4px; border-radius: 12px; margin-bottom: 20px; }
-        .pill-tab { padding: 10px 5px; border-radius: 10px; border: none; font-weight: 700; font-size: 10px; cursor: pointer; transition: 0.2s; text-align: center; white-space: normal; }
-        .pill-active { background: white; color: #003058; shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .pill-inactive { background: transparent; color: #64748b; }
+        .card-aluno-atv { background: white; padding: 15px; border-radius: 16px; border: 1px solid #edf2f7; display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between; align-items: center; width: 100%; box-sizing: border-box; gap: 10px; transition: 0.3s; }
+        .card-aluno-atv:active { transform: scale(0.98); }
+        .btn-acao-card { background: #003058; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 700; font-size: 11px; cursor: pointer; min-width: 100px; }
 
-        .card-aluno-atv { background: white; padding: 16px; border-radius: 16px; border: 1px solid #e2e8f0; display: flex; flex-direction: column; gap: 12px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        .btn-acao-card { background: #003058; color: white; border: none; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; width: 100%; text-transform: uppercase; }
+        #tab-escrever, #tab-recebidas, #tab-enviadas { width: 100%; max-width: 850px; margin: 0 auto; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        #tab-escrever, #tab-recebidas, #tab-enviadas { animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
+        
+        .folha-caderno { background: #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #d1d5db; width: 100%; margin: 0 auto; overflow: hidden; }
+        .linha-pautada { position: relative; background: #fff; padding-left: clamp(40px, 12vw, 55px); background-image: linear-gradient(#e5e7eb 1px, transparent 1px); background-size: 100% 30px; line-height: 30px; min-height: 600px; }
+        #texto-redacao { -webkit-user-select: text; user-select: text; width: 100%; height: 600px; background: transparent; border: none; outline: none; resize: none; font-family: 'Kalam', cursive; font-size: 18px; color: #2c3e50; padding: 0 10px; line-height: 30px; display: block; box-sizing: border-box; overflow-y: scroll; }
+        
+        .margem-numerica { position: absolute; left: 0; top: 0; width: clamp(30px, 10vw, 40px); text-align: center; color: #94a3b8; font-size: 11px; border-right: 1px solid #fca5a5; background: #fff; }
+        .margem-vermelha { position: absolute; left: clamp(35px, 11vw, 50px); top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; }
+        #salvamento-status { font-size: 10px; color: #003058; font-weight: 700; opacity: 0; transition: opacity 0.3s; }
 
-        .folha-caderno { 
-            background: #fff; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
-            border: 1px solid #d1d5db; 
-            width: 100%; 
-            overflow-x: auto; 
-            position: relative; 
-            background-color: #f1f5f9;
-        }
-        .linha-pautada { 
-            position: relative; 
-            background: #fff; 
-            width: 850px; 
-            height: 800px; 
-            margin: 0 auto;
-            background-image: linear-gradient(#e2e8f0 1px, transparent 1px); 
-            background-size: 100% 32px; 
-            box-sizing: border-box;
-        }
-        #texto-redacao { 
-            width: 100%; 
-            height: 800px; 
-            background: transparent; 
-            border: none; 
-            outline: none; 
-            resize: none; 
-            font-family: 'Kalam', cursive; 
-            font-size: 18px; 
-            color: #1e293b; 
-            padding: 0 20px 0 55px; 
-            line-height: 32px; 
-            box-sizing: border-box; 
-            display: block;
-            overflow: hidden;
-        }
-        .margem-numerica { 
-            position: absolute; 
-            left: 0; 
-            top: 0; 
-            width: 40px; 
-            text-align: center; 
-            color: #94a3b8; 
-            font-size: 11px; 
-            border-right: 1px solid #fee2e2; 
-            background: #fdfdfd; 
-            z-index: 2; 
-            height: 800px;
-        }
-        .margem-numerica div { 
-            height: 32px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: center; 
-            border-bottom: 1px solid #f1f5f9;
-            box-sizing: border-box;
-        }
-
-        .margem-vermelha { position: absolute; left: 40px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.6; z-index: 1; }
-
-        #salvamento-status { font-size: 9px; color: #10b981; font-weight: 800; opacity: 0; transition: 0.3s; text-transform: uppercase; }
-
-        /* Ajuste para Imagem no Topo (Mobile) e Lado a Lado (Desktop) */
-        .conteudo-proposta-flex {
+        /* Ajuste Mobile: Imagem em cima, texto embaixo */
+        .layout-proposta-flex {
             display: flex;
-            flex-direction: column; /* Celular: Imagem em cima, texto embaixo */
+            flex-direction: column;
             gap: 15px;
             margin-top: 10px;
         }
-
         #container-img-apoio {
             width: 100%;
-            max-width: 100%;
+            display: none;
         }
-
         #img-apoio-dinamica {
             width: 100%;
+            max-height: 300px;
+            object-fit: contain;
             border-radius: 8px;
-            display: block;
         }
 
+        /* Ajuste Desktop: Texto na esquerda, Imagem na direita */
         @media (min-width: 768px) {
-            .pill-tab-container { display: flex; width: fit-content; }
-            .pill-tab { padding: 10px 25px; font-size: 12px; }
-            .btn-acao-card { width: auto; padding: 10px 25px; }
-            .container-escrita { padding: 30px; }
-            
-            /* Desktop: Volta a ficar um do lado do outro */
-            .card-aluno-atv { flex-direction: row !important; align-items: center !important; }
-            .conteudo-proposta-flex { flex-direction: row-reverse !important; align-items: flex-start; }
-            #container-img-apoio { flex: 0 0 150px; }
+            .layout-proposta-flex {
+                flex-direction: row;
+                align-items: flex-start;
+            }
+            #container-img-apoio {
+                flex: 0 0 180px;
+                order: 2;
+            }
+            #tema-dinamico {
+                order: 1;
+            }
+        }
+        #img-apoio-dinamica { width: 100%; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        @media (max-width: 600px) {
+            .card-aluno-atv { flex-direction: column; text-align: center; }
+            .btn-acao-card { width: 100%; margin-top: 5px; }
+            #tema-dinamico { font-size: 13px; }
+            .folha-caderno { border-radius: 0; border-left: none; border-right: none; }
         }
 
     </style>
@@ -525,13 +484,11 @@ window.Router.register('escritaalunoclm', async () => {
                     <h2 style="color:#003058; font-size:1.2rem; margin:0;">PROPOSTA SELECIONADA:</h2>
                     <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
                 </div>
-                <div class="conteudo-proposta-flex">
-                    <div id="container-img-apoio" style="display:none;">
+                <div class="layout-proposta-flex">
+                    <div id="container-img-apoio">
                         <img id="img-apoio-dinamica" src="">
                     </div>
-                    <div style="flex: 1;">
-                        <p id="tema-dinamico" style="margin:0; line-height:1.5; color:#475569; font-weight:500;">Selecione uma atividade para começar...</p>
-                    </div>
+                    <p id="tema-dinamico">Selecione uma atividade para começar...</p>
                 </div>
             </div>
             <div class="folha-caderno">
@@ -540,7 +497,7 @@ window.Router.register('escritaalunoclm', async () => {
                     <div id="salvamento-status">Alterações salvas automaticamente</div>
                 </div>
                 <div class="linha-pautada">
-                    <div class="margem-numerica">${Array.from({ length: 25 }, (_, i) => `<div>${(i + 1)}</div>`).join('')}</div>
+                    <div class="margem-numerica">${Array.from({ length: 25 }, (_, i) => `<div style="height: 30px;">${(i + 1)}</div>`).join('')}</div>
                     <div class="margem-vermelha"></div>
                     <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
                 </div>
