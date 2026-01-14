@@ -217,7 +217,7 @@ window.Router.register('escritaalunoclm', async () => {
             textarea.oninput = () => {
                 // Lógica de limite de linhas
                 const linhas = textarea.value.split('\n');
-                if (linhas.length > 25) textarea.value = linhas.slice(0, 25).join('\n');
+                if (linhas.length > 25) { textarea.value = linhas.slice(0, 25).map(l => l.substring(0, 90)).join('\n'); }
                 
                 const texto = textarea.value;
                 const textoTrim = texto.trim();
@@ -427,35 +427,46 @@ window.Router.register('escritaalunoclm', async () => {
 
         #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
         
-        .folha-caderno { background: #fff; border-radius: 8px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); border: 1px solid #d1d5db; width: 100%; margin: 0 auto; overflow: hidden; }
+        .folha-caderno { 
+            background: #fff; 
+            border-radius: 4px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+            border: 1px solid #c1c5cb; 
+            width: 100%; 
+            max-width: 800px; 
+            margin: 0 auto; 
+            overflow: hidden; 
+        } 
+
         .linha-pautada { 
-    position: relative; 
-    background: #fff; 
-    padding-left: clamp(40px, 12vw, 55px); 
-    background-image: linear-gradient(#e5e7eb 1px, transparent 1px); 
-    background-size: 100% 30px; 
-    line-height: 30px; 
-    height: 750px; 
-    overflow: hidden;
-}
-        #texto-redacao { 
-    -webkit-user-select: text; 
-    user-select: text; 
-    width: 100%; 
-    height: 750px; 
-    background: transparent; 
-    border: none; 
-    outline: none; 
-    resize: none; 
-    font-family: 'Kalam', cursive; 
-    font-size: 18px; 
-    color: #2c3e50; 
-    padding: 0 10px; 
-    line-height: 30px; 
-    display: block; 
-    box-sizing: border-box; 
-    overflow: hidden;
-}
+            position: relative; 
+            background: #fff; 
+            padding-left: 55px; 
+            background-image: linear-gradient(#e5e7eb 1px, transparent 1px); 
+            background-size: 100% 32px; 
+            line-height: 32px; 
+            height: 800px; 
+            overflow: hidden;
+        }
+
+      #texto-redacao { 
+            -webkit-user-select: text; 
+            user-select: text; 
+            width: 100%; 
+            height: 800px; 
+            background: transparent; 
+            border: none; 
+            outline: none; 
+            resize: none; 
+            font-family: 'Kalam', cursive; 
+            font-size: 19px; 
+            color: #2c3e50; 
+            padding: 0 15px; 
+            line-height: 32px; 
+            display: block; 
+            box-sizing: border-box; 
+            overflow: hidden;
+        }
         
         .margem-numerica { position: absolute; left: 0; top: 0; width: clamp(30px, 10vw, 40px); text-align: center; color: #94a3b8; font-size: 11px; border-right: 1px solid #fca5a5; background: #fff; }
         .margem-vermelha { position: absolute; left: clamp(35px, 11vw, 50px); top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; }
@@ -565,7 +576,7 @@ window.Router.register('escritaalunoclm', async () => {
         <div id="tab-recebidas"><div id="lista-propostas-recebidas"></div></div>
 
         <div id="tab-escrever" style="display:none;">
-            <div class="card-aluno-atv" style="display:block; margin-bottom:20px; border-left: 6px solid #003058; height: auto; width: 100%; max-width: none;">
+            <div class="card-aluno-atv" style="display:block; margin: 0 auto 20px auto; border-left: 6px solid #003058; height: auto; width: 100%; max-width: 800px; box-sizing: border-box;">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start;">
                     <h2 style="color:#003058; font-size:1.2rem; margin:0;">PROPOSTA SELECIONADA:</h2>
                     <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
@@ -583,7 +594,7 @@ window.Router.register('escritaalunoclm', async () => {
                     <div id="salvamento-status">Alterações salvas automaticamente</div>
                 </div>
                 <div class="linha-pautada">
-                    <div class="margem-numerica" style="display: block; line-height: 30px; height: 750px;">
+                    <div class="margem-numerica" style="display: block; line-height: 32px; height: 800px; width: 45px;">
     <div style="height: 30px;">01</div><div style="height: 30px;">02</div><div style="height: 30px;">03</div><div style="height: 30px;">04</div><div style="height: 30px;">05</div>
     <div style="height: 30px;">06</div><div style="height: 30px;">07</div><div style="height: 30px;">08</div><div style="height: 30px;">09</div><div style="height: 30px;">10</div>
     <div style="height: 30px;">11</div><div style="height: 30px;">12</div><div style="height: 30px;">13</div><div style="height: 30px;">14</div><div style="height: 30px;">15</div>
