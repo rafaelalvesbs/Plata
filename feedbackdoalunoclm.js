@@ -38,7 +38,7 @@ window.Router.register('feedbackdoalunoclm', async () => {
                     </div>
 
                     <div style="padding:15px 25px; background:white; border-top:1px solid #f1f5f9; display:flex; justify-content:flex-end;">
-                        <button onclick="document.getElementById('modal-feedback-view').remove()" style="padding:12px 25px; background:${azulPadrao}; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:800; font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; width: 100%; max-width: 150px;">Entendido</button>
+                        <button onclick="document.getElementById('modal-feedback-view').remove()" style="padding:12px 25px; background:${azulPadrao}; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:800; font-size:0.7rem; text-transform:uppercase; letter-spacing:1px; width: 100%; max-width: 150px;">OK</button>
                     </div>
                 </div>
             </div>`;
@@ -116,8 +116,8 @@ window.Router.register('feedbackdoalunoclm', async () => {
                         ${item.feedbackProfessor || item.feedbackGeral || 'Sem comentários adicionais.'}
                     </p>
                 </div>
-                <div class="btn-container-mobile" style="display: flex; justify-content: center; align-items: center; flex: 1;">
-                    <button onclick="window.abrirModalFeedbackCompleto('${item.id}')" style="background:${azulPadrao}; color:white; border:none; padding:12px 20px; border-radius:10px; font-size:9px; font-weight:800; cursor:pointer; text-transform: uppercase; letter-spacing:0.5px; transition:0.2s; white-space: nowrap; width: auto; min-width: 140px;">Ver Comentários</button>
+                <div class="btn-container-mobile">
+                    <button onclick="window.abrirModalFeedbackCompleto('${item.id}')" style="background:${azulPadrao}; color:white; border:none; padding:10px 18px; border-radius:10px; font-size:9px; font-weight:800; cursor:pointer; text-transform: uppercase; letter-spacing:0.5px; transition:0.2s; white-space: nowrap;">Ver Comentários</button>
                 </div>`;
             container.appendChild(card);
         });
@@ -148,12 +148,10 @@ window.Router.register('feedbackdoalunoclm', async () => {
                 }
                 .btn-container-mobile {
                     width: 100%;
-                    display: flex !important;
-                    justify-content: center !important;
                 }
                 .btn-container-mobile button {
-                    width: 80% !important;
-                    max-width: 250px;
+                    width: 100%;
+                    padding: 12px !important;
                 }
                 .header-prof h1 {
                     font-size: 1.5rem !important;
