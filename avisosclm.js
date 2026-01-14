@@ -84,12 +84,8 @@ window.Router.register('avisosclm', async () => {
 
       return `
         <div class="card-compacto" style="border-left: 4px solid ${azulPadrao}; margin-bottom: 12px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); background: #fff; border-radius: 12px; display: flex; flex-direction: column; position: relative;">
-          
-          <button onclick="window.confirmarExclusaoAviso('${av.id}')" style="position: absolute; top: 12px; right: 12px; background: #fee2e2; color: #ef4444; border: none; width: 28px; height: 28px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s;">
-            <i class="fa-solid fa-trash-can" style="font-size: 0.8rem;"></i>
-          </button>
-
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; padding-right: 35px;">
+        
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
             <span style="background: #e0f2fe; color: #0369a1; padding: 2px 8px; border-radius: 6px; font-size: 0.65rem; font-weight: 800; text-transform: uppercase;">
               ${av.turma || 'Geral'}
             </span>
@@ -98,7 +94,7 @@ window.Router.register('avisosclm', async () => {
             </span>
           </div>
 
-          <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: ${azulPadrao}; font-weight: 700; line-height: 1.2; word-break: break-word; padding-right: 35px;">${av.titulo}</h4>
+          <h4 style="margin: 0 0 8px 0; font-size: 0.9rem; color: ${azulPadrao}; font-weight: 700; line-height: 1.2; word-break: break-word;">${av.titulo}</h4>
           
           <div style="color: #64748b; font-size: 0.8rem; line-height: 1.5; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; border-top: 1px solid #f1f5f9; padding-top: 8px;">
             ${av.conteudo}
@@ -121,47 +117,7 @@ window.Router.register('avisosclm', async () => {
         btnNext.style.pointerEvents = fim >= todosOsAvisos.length ? "none" : "auto";
     }
   };
-
-  // --- NOVO MODAL DE EXCLUSÃO ESTILIZADO ---
-  window.confirmarExclusaoAviso = (id) => {
-    const modalConfirmHTML = `
-      <div id="modal-confirm-exclusao" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,48,88,0.4); display:flex; justify-content:center; align-items:center; z-index:10000; padding:20px; backdrop-filter: blur(6px); animation: fadeIn 0.2s ease;">
-        <div style="background:white; padding:30px; border-radius:20px; max-width:400px; width:100%; text-align:center; box-shadow:0 20px 40px rgba(0,0,0,0.2); transform: scale(0.9); animation: scaleUp 0.2s forwards;">
-          <div style="background:#fee2e2; color:#ef4444; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 20px auto; font-size:1.5rem;">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-          </div>
-          <h3 style="color:${azulPadrao}; margin:0 0 10px 0; font-size:1.2rem; font-weight:800;">Excluir Aviso?</h3>
-          <p style="color:#64748b; font-size:0.9rem; line-height:1.5; margin-bottom:25px;">Esta ação é permanente e o aviso não poderá ser recuperado.</p>
-          
-          <div style="display:flex; gap:12px;">
-            <button onclick="document.getElementById('modal-confirm-exclusao').remove()" style="flex:1; padding:12px; background:#f1f5f9; color:#64748b; border:none; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s;">Cancelar</button>
-            <button onclick="window.executarExclusaoAviso('${id}')" style="flex:1; padding:12px; background:${azulPadrao}; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:700; transition:0.2s; box-shadow:0 4px 12px rgba(0,48,88,0.2);">Sim, Excluir</button>
-          </div>
-        </div>
-      </div>
-      <style>
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes scaleUp { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-      </style>`;
-    document.body.insertAdjacentHTML('beforeend', modalConfirmHTML);
-  };
-
-  window.executarExclusaoAviso = async (id) => {
-    const btn = event.target;
-    btn.innerText = "Excluindo...";
-    btn.disabled = true;
-
-    try {
-      await deleteDoc(doc(db, "avisos", id));
-      document.getElementById('modal-confirm-exclusao').remove();
-      carregarDadosFirebase();
-    } catch (error) {
-      console.error("Erro ao excluir aviso:", error);
-      alert("Erro ao remover o aviso.");
-      document.getElementById('modal-confirm-exclusao').remove();
-    }
-  };
-
+  
   window.verAvisoCompleto = (titulo, conteudo) => {
     const modalHTML = `
       <div id="modal-aviso" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,48,88,0.4); display:flex; justify-content:center; align-items:center; z-index:9999; padding:20px; backdrop-filter: blur(6px);">
@@ -169,7 +125,7 @@ window.Router.register('avisosclm', async () => {
           <h2 style="color:${azulPadrao}; margin-top:0; font-weight:800; line-height:1.2;">${titulo}</h2>
           <hr style="border:0; border-top:1px solid #f1f5f9; margin:20px 0;">
           <div style="color:#475569; line-height:1.7; font-size:1rem;">${conteudo}</div>
-          <button onclick="document.getElementById('modal-aviso').remove()" style="margin-top:25px; width:100%; padding:14px; background:${azulPadrao}; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:700; font-size:1rem; box-shadow:0 5px 15px rgba(0,48,88,0.2);">Entendido</button>
+          <button onclick="document.getElementById('modal-aviso').remove()" style="margin-top:25px; width:100%; padding:14px; background:${azulPadrao}; color:white; border:none; border-radius:12px; cursor:pointer; font-weight:700; font-size:1rem; box-shadow:0 5px 15px rgba(0,48,88,0.2);">OK</button>
         </div>
       </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
