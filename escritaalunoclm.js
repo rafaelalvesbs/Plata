@@ -559,44 +559,29 @@ window.Router.register('escritaalunoclm', async () => {
     
     /* MOBILE */
     @media (max-width: 600px) {
-        .folha-caderno { 
-            height: 835px !important; 
-            border-radius: 0;
-            border-left: none;
-            border-right: none;
-            overflow-x: auto !important;
-            overflow-y: hidden !important;
-        }
+        /* MOBILE — BARRA HORIZONTAL DENTRO DO EDITOR */
+.folha-caderno {
+    overflow: hidden !important;
+}
 
-        .linha-pautada {
-            height: 800px !important;
-            width: 100% !important;
-            display: block !important;
-        }
+.linha-pautada {
+    overflow: hidden !important;
+}
 
-        .scroll-content {
-            width: 300% !important;
-            min-width: 300% !important;
-            height: 800px !important;
-            min-height: 800px !important;
-            background-size: 100% 32px !important;
-            padding-left: 55px;
-        }
+.scroll-content {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    width: 100% !important;
+}
 
-        #texto-redacao {
-            width: 100% !important;
-            height: 800px !important;
-            font-size: 18px !important;
-            white-space: pre !important;
-            word-wrap: normal !important;
-            overflow-wrap: normal !important;
-            line-height: 32px !important;
-            overflow-y: hidden !important;
-            overflow-x: auto !important;
-            display: block !important;
-            padding-right: 20px !important;
-            -webkit-overflow-scrolling: touch;
-        }
+#texto-redacao {
+    min-width: 1600px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: pre !important;
+    word-wrap: normal !important;
+}
+
 
         .margem-numerica {
             position: absolute !important;
