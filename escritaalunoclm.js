@@ -217,7 +217,7 @@ window.Router.register('escritaalunoclm', async () => {
             textarea.oninput = () => {
                 // Lógica de limite de linhas
                 const linhas = textarea.value.split('\n');
-                if (linhas.length > 25) { textarea.value = linhas.slice(0, 25).map(l => l.substring(0, 90)).join('\n'); }
+                if (linhas.length > 25) { textarea.value = linhas.slice(0, 25).join('\n'); }
                 
                 const texto = textarea.value;
                 const textoTrim = texto.trim();
