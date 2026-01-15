@@ -486,6 +486,24 @@ window.Router.register('escritaalunoclm', async () => {
         display: block; 
         box-sizing: border-box; 
         overflow-y: auto;
+        overflow-x: auto;
+        white-space: pre;
+        word-wrap: normal;
+    }
+
+    /* ESTILIZAÇÃO DA BARRA DE ROLAGEM HORIZONTAL */
+    #texto-redacao::-webkit-scrollbar {
+        height: 8px;
+    }
+    #texto-redacao::-webkit-scrollbar-track {
+        background: #f1f1f1;
+    }
+    #texto-redacao::-webkit-scrollbar-thumb {
+        background: #003058;
+        border-radius: 4px;
+    }
+    #texto-redacao::-webkit-scrollbar-thumb:hover {
+        background: #004075;
     }
 
     /* 7. BOTÕES (AÇÃO E ENVIAR FINAL) */
