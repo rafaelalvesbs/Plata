@@ -578,8 +578,26 @@ window.Router.register('escritaalunoclm', async () => {
             padding-right: 20px !important;
         }
 
-        .margem-numerica, .margem-numerica div {
+        .margem-numerica {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 45px !important;
+            height: 800px !important;
+            background: #fff !important;
+            z-index: 10 !important; /* Isso garante que os números fiquem por cima */
+            border-right: 1px solid #fca5a5 !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+
+        .margem-numerica div {
             height: 32px !important;
+            line-height: 32px !important;
+            text-align: center !important;
+            color: #94a3b8 !important;
+            font-size: 11px !important;
+            width: 45px !important;
         }
 
         .card-aluno-atv { 
