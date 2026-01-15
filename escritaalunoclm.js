@@ -61,26 +61,29 @@ window.Router.register('escritaalunoclm', async () => {
         }
     };
 
-    // --- LÓGICA DE NAVEGAÇÃO ---
+    // --- LÓGICA DE NAVEGAÇÃO COM TÍTULOS DINÂMICOS ---
     window.switchTabEscrita = (tab) => {
         const tabs = ['recebidas', 'escrever', 'enviadas'];
         
+        // Atualização Dinâmica do Título e Subtítulo
+        const titulos = {
+            'recebidas': { t: 'ATIVIDADES', s: 'Temas disponíveis para você praticar' },
+            'escrever': { t: 'REDAÇÃO', s: 'Sua folha de escrita oficial' },
+            'enviadas': { t: 'HISTÓRICO', s: 'Acompanhe suas produções e notas' }
+        };
+
+        const mainTitle = document.getElementById('main-title');
+        const mainSubtitle = document.getElementById('main-subtitle');
+        if (mainTitle) mainTitle.innerText = titulos[tab].t;
+        if (mainSubtitle) mainSubtitle.innerText = titulos[tab].s;
+
         if (tab === 'escrever' && !propostaAtiva) {
             const rascunho = localStorage.getItem(`rascunho_redacao_${user.uid}`);
-            const textarea = document.getElementById('texto-redacao');
-            if(textarea) textarea.value = rascunho || "";
-            
-            const temaDinamico = document.getElementById('tema-dinamico');
-            if(temaDinamico) temaDinamico.innerText = "Selecione uma atividade para começar...";
-            
-            const prazoDinamico = document.getElementById('prazo-dinamico');
-            if(prazoDinamico) prazoDinamico.innerText = "--/--/--";
-            
-            const imgCont = document.getElementById('container-img-apoio');
-            if(imgCont) imgCont.style.display = 'none';
-
-            const contador = document.getElementById('contador-palavras');
-            if(contador) contador.innerText = rascunho ? rascunho.trim().split(/\s+/).length : "0";
+            document.getElementById('texto-redacao').value = rascunho || "";
+            document.getElementById('tema-dinamico').innerText = "Selecione uma atividade para começar...";
+            document.getElementById('prazo-dinamico').innerText = "--/--/--";
+            document.getElementById('container-img-apoio').style.display = 'none';
+            document.getElementById('contador-palavras').innerText = rascunho ? rascunho.trim().split(/\s+/).length : "0";
         }
 
         tabs.forEach(t => {
@@ -92,7 +95,6 @@ window.Router.register('escritaalunoclm', async () => {
                 btn.classList.toggle('pill-inactive', t !== tab);
             }
         });
-
         if (tab === 'enviadas') carregarEnviadas();
         if (tab === 'recebidas') carregarPropostasDisponiveis();
     };
@@ -137,7 +139,6 @@ window.Router.register('escritaalunoclm', async () => {
                 hoje.setHours(0, 0, 0, 0);
                 const dataPrazo = data.prazo ? new Date(data.prazo) : null;
                 const prazoVencido = dataPrazo && hoje > dataPrazo;
-                
                 const card = document.createElement('div');
                 card.className = 'card-aluno-atv';
                 card.style.marginBottom = "10px";
@@ -150,7 +151,6 @@ window.Router.register('escritaalunoclm', async () => {
                     </div>
                     <button class="btn-acao-card" style="margin-left: auto;">ESCREVER</button>
                 `;
-                
                 if (prazoVencido) {
                     card.style.opacity = '0.6';
                     card.style.cursor = 'not-allowed';
@@ -193,28 +193,25 @@ window.Router.register('escritaalunoclm', async () => {
         const idKey = proposta.idOriginal || proposta.id;
         const rascunhoSalvo = localStorage.getItem(`rascunho_${idKey}_${user.uid}`);
         
-        const textarea = document.getElementById('texto-redacao');
-        if(textarea) textarea.value = rascunhoSalvo || proposta.textoOriginal || "";
-        
-        const temaDinamico = document.getElementById('tema-dinamico');
-        if(temaDinamico) temaDinamico.innerText = proposta.conteudo || proposta.titulo || "Redação";
+        document.getElementById('texto-redacao').value = rascunhoSalvo || proposta.textoOriginal || "";
+        document.getElementById('tema-dinamico').innerText = proposta.conteudo || proposta.titulo || "Redação";
         
         const prazoElement = document.getElementById('prazo-dinamico');
-        if (prazoElement) {
-            prazoElement.innerText = proposta.prazo ? new Date(proposta.prazo).toLocaleDateString('pt-BR') : '--/--/--';
+        if (proposta.prazo) {
+            prazoElement.innerText = new Date(proposta.prazo).toLocaleDateString('pt-BR');
+        } else {
+            prazoElement.innerText = '--/--/--';
         }
         
         const imgCont = document.getElementById('container-img-apoio');
         const imgTag = document.getElementById('img-apoio-dinamica');
         
-        if (imgCont && imgTag) {
-            if (proposta.imagemApoio && proposta.imagemApoio !== "") { 
-                imgTag.src = proposta.imagemApoio; 
-                imgCont.style.display = 'block'; 
-            } else { 
-                imgCont.style.display = 'none'; 
-                imgTag.src = "";
-            }
+        if (proposta.imagemApoio && proposta.imagemApoio !== "") { 
+            imgTag.src = proposta.imagemApoio; 
+            imgCont.style.display = 'block'; 
+        } else { 
+            imgCont.style.display = 'none'; 
+            imgTag.src = "";
         }
         
         window.scrollTo(0, 0);
@@ -229,16 +226,11 @@ window.Router.register('escritaalunoclm', async () => {
         if (textarea) {
             textarea.oninput = () => {
                 const linhas = textarea.value.split('\n');
-                if (linhas.length > 25) { 
-                    textarea.value = linhas.slice(0, 25).map(l => l.substring(0, 90)).join('\n'); 
-                }
+                if (linhas.length > 25) { textarea.value = linhas.slice(0, 25).map(l => l.substring(0, 90)).join('\n'); }
                 
                 const texto = textarea.value;
                 const textoTrim = texto.trim();
-                
-                if(wordCountSpan) {
-                    wordCountSpan.innerText = textoTrim ? textoTrim.split(/\s+/).length : 0;
-                }
+                wordCountSpan.innerText = textoTrim ? textoTrim.split(/\s+/).length : 0;
 
                 if (propostaAtiva) {
                     const idKey = propostaAtiva.idOriginal || propostaAtiva.id;
@@ -254,7 +246,7 @@ window.Router.register('escritaalunoclm', async () => {
             };
             
             const textoInicial = textarea.value.trim();
-            if(wordCountSpan) wordCountSpan.innerText = textoInicial ? textoInicial.split(/\s+/).length : 0;
+            wordCountSpan.innerText = textoInicial ? textoInicial.split(/\s+/).length : 0;
         }
     }
 
@@ -297,14 +289,13 @@ window.Router.register('escritaalunoclm', async () => {
             }
             
             localStorage.removeItem(`rascunho_${idReferencia}_${user.uid}`);
-            
             textarea.value = "";
             propostaAtiva = null;
             await carregarEnviadas();
             window.switchTabEscrita('enviadas');
         } catch (e) { 
             console.error(e);
-            window.mostrarAviso("Erro ao enviar", "Não foi possível enviar sua redação.", "erro"); 
+            window.mostrarAviso("Erro", "Ocorreu um problema ao enviar. Verifique sua conexão.", "erro"); 
         }
     };
 
@@ -340,6 +331,7 @@ window.Router.register('escritaalunoclm', async () => {
                 const card = document.createElement('div');
                 card.className = 'card-aluno-atv';
                 card.style.marginBottom = "10px";
+                card.style.opacity = podeEditar ? '1' : '0.9';
                 
                 card.innerHTML = `
                     <div style="flex:1; min-width: 200px;">
@@ -347,7 +339,7 @@ window.Router.register('escritaalunoclm', async () => {
                         <p style="font-size:11px; color:#64748b; margin-top:4px;">Enviado em: ${red.data} ${statusBadge}</p>
                     </div>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        ${podeEditar ? `<button class="btn-acao-card btn-editar" style="background:#003058;">EDITAR</button>` : `<i class="fa-solid fa-lock" style="color:#94a3b8; font-size:1.2rem;" title="Bloqueado"></i>`}
+                        ${podeEditar ? `<button class="btn-acao-card btn-editar" style="background:#003058;">EDITAR</button>` : `<i class="fa-solid fa-lock" style="color:#94a3b8; font-size:1.2rem;" title="Bloqueado pelo Professor"></i>`}
                     </div>
                 `;
 
@@ -355,15 +347,25 @@ window.Router.register('escritaalunoclm', async () => {
                     card.querySelector('.btn-editar').onclick = async () => {
                         const realTimeDoc = await fs.getDoc(fs.doc(db, "redacoes", red.id));
                         if (realTimeDoc.exists() && realTimeDoc.data().status !== 'pendente') {
-                            window.mostrarAviso("Ação Bloqueada", "A correção já iniciou.", "erro");
+                            window.mostrarAviso("Ação Bloqueada", "A correção desta redação já foi finalizada.", "erro");
                             carregarEnviadas(); 
                             return;
                         }
+
+                        let prazoOriginal = null;
+                        if (red.atividadeId) {
+                            const atvSnap = await fs.getDoc(fs.doc(db, "atividades_enviadas", red.atividadeId));
+                            if (atvSnap.exists()) {
+                                prazoOriginal = atvSnap.data().prazo;
+                            }
+                        }
+
                         abrirEditorComProposta({
                             idOriginal: red.id,
                             atividadeId: red.atividadeId,
                             tituloAtividade: red.tituloAtividade,
                             textoOriginal: red.texto,
+                            prazo: prazoOriginal,
                             conteudo: red.tituloAtividade,
                             imagemApoio: null
                         });
@@ -391,89 +393,220 @@ window.Router.register('escritaalunoclm', async () => {
 
     return `
     <style>
-        .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; padding: 15px; margin: 0; }
-        .header-prof h1 { text-transform: uppercase; color: #003058; font-weight: 900; margin: 0; font-size: clamp(1.5rem, 6vw, 2rem); }
-        .pill-tab-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; margin-bottom: 25px; width: 100%;}
-        .pill-tab { padding: 10px 2px; border-radius: 8px; border: none; font-weight: 700; font-size: 9px; cursor: pointer; transition: 0.3s; text-align: center; width: 100%; }
-        .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
-        .pill-inactive { background: #e2e8f0; color: #64748b; }
-        #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
-        .layout-proposta-flex { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
-        #img-apoio-dinamica { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; }
-        .folha-caderno { background: #fff; border-radius: 4px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid #c1c5cb; width: 100%; max-width: 800px; margin: 0 auto; position: relative; overflow: hidden; height: 835px; display: flex; flex-direction: column; } 
-        .linha-pautada { position: relative; flex: 1; background-color: #fff; overflow: hidden; }
-        .scroll-content { position: relative; width: 100%; height: 100%; background-image: linear-gradient(#e5e7eb 1px, transparent 1px); background-size: 100% 32px; padding-left: 55px; box-sizing: border-box; }
-        .margem-numerica { position: absolute; left: 0; top: 0; width: 45px; height: 100%; background: #fff; z-index: 2; border-right: 1px solid #fca5a5; display: flex; flex-direction: column; }
-        .margem-numerica div { height: 32px !important; line-height: 32px !important; text-align: center; color: #94a3b8; font-size: 11px; }
-        .margem-vermelha { position: absolute; left: 55px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; z-index: 1; }
-        #texto-redacao { width: 100%; height: 100%; background: transparent; border: none; outline: none; resize: none; font-family: 'Kalam', cursive; font-size: 19px; color: #2c3e50; padding: 0 15px; line-height: 32px; display: block; box-sizing: border-box; overflow-y: auto; }
-        .btn-enviar-final { width: 100%; margin: 20px auto; display: block; background: #003058; color: white; padding: 18px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.3s; }
-        .btn-acao-card { background: #003058; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; transition: 0.3s; text-transform: uppercase; white-space: nowrap; }
-        .card-aluno-atv { background: white; padding: 16px; border-radius: 16px; border: 1px solid #edf2f7; display: flex; justify-content: space-between; align-items: center; gap: 15px; margin-bottom: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-        @media (max-width: 600px) {
-            .folha-caderno { height: 500px !important; border-radius: 0; border-left: none; border-right: none; }
-            .linha-pautada { overflow-y: scroll !important; -webkit-overflow-scrolling: touch; }
-            .scroll-content { height: 801px !important; min-height: 801px !important; }
-            #texto-redacao { height: 801px !important; overflow: hidden !important; font-size: 18px; }
-            .card-aluno-atv { flex-direction: column; align-items: flex-start; }
-            .btn-acao-card { width: 100%; padding: 14px; }
-        }
-        @media (min-width: 768px) {
-            .layout-proposta-flex { flex-direction: row; align-items: flex-start; }
-            #container-img-apoio { flex: 0 0 180px; order: 2; display: block; }
-            #tema-dinamico { order: 1; }
-            .btn-enviar-final, .card-topo-proposta { max-width: 800px; margin: 0 auto 20px auto !important; }
-        }
-    </style>
+    /* 1. ESTRUTURA GERAL */
+    .container-escrita { width: 100%; box-sizing: border-box; font-family: 'Inter', sans-serif; padding: 20px; margin: 0; }
+    .header-prof { margin-bottom: 25px; }
+    .header-prof h1 { text-transform: uppercase; color: #003058; font-weight: 900; margin: 0; font-size: clamp(1.8rem, 6vw, 2.5rem); letter-spacing: -1px; }
+    .header-prof p { margin-top: 5px; font-size: 14px; font-weight: 500; }
+    
+    /* 2. ABAS (PILLS) */
+    .pill-tab-container { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 25px; width: 100%;}
+    .pill-tab { padding: 12px 5px; border-radius: 12px; border: none; font-weight: 800; font-size: 10px; cursor: pointer; transition: 0.3s; text-align: center; width: 100%; text-transform: uppercase; }
+    .pill-active { background: #003058; color: white; box-shadow: 0 4px 12px rgba(0,48,88,0.2); }
+    .pill-inactive { background: #f1f5f9; color: #64748b; }
 
-    <div class="container-escrita">
-        <div class="header-prof">
-            <h1>ESCRITA</h1>
-            <p style="color:#64748b;">Pratique suas redações</p>
-        </div>
-        <hr style="border:0; border-top:1px solid #e2e8f0; margin:20px 0;">
-        <div class="pill-tab-container">
-            <button id="btn-tab-recebidas" class="pill-tab pill-active" onclick="window.switchTabEscrita('recebidas')">REDAÇÕES RECEBIDAS</button>
-            <button id="btn-tab-escrever" class="pill-tab pill-inactive" onclick="window.switchTabEscrita('escrever')">ESCREVER AGORA</button>
-            <button id="btn-tab-enviadas" class="pill-tab pill-inactive" onclick="window.switchTabEscrita('enviadas')">MINHAS REDAÇÕES</button>
-        </div>
-        <div id="tab-recebidas">
-            <div id="lista-propostas-recebidas"></div>
-        </div>
-        <div id="tab-escrever" style="display:none;">
-            <div class="card-aluno-atv card-topo-proposta" style="display:block; border-left: 6px solid #003058; width: 100%; box-sizing: border-box;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-                    <h2 style="color:#003058; font-size:1.2rem; margin:0;">PROPOSTA SELECIONADA:</h2>
-                    <span style="font-size:11px; font-weight:800; color:#e67e22;">PRAZO: <span id="prazo-dinamico">--/--/--</span></span>
+    #tab-escrever, #tab-recebidas, #tab-enviadas { width: 100%; max-width: none; margin: 0; animation: fadeIn 0.4s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* 3. TEMA E PROPOSTA (CARD DE TOPO) */
+    #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
+    .layout-proposta-flex { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
+    #container-img-apoio { width: 100%; display: none; }
+    #img-apoio-dinamica { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; }
+
+    /* 4. A FOLHA DE REDAÇÃO */
+    .folha-caderno { 
+        background: #fff; 
+        border-radius: 8px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+        border: 1px solid #c1c5cb; 
+        width: 100%; 
+        max-width: 800px; 
+        margin: 0 auto; 
+        position: relative;
+        overflow: hidden;
+        height: 835px; 
+        display: flex;
+        flex-direction: column;
+    } 
+
+    .linha-pautada { position: relative; flex: 1; background-color: #fff; overflow: hidden; }
+
+    .scroll-content {
+        position: relative;
+        width: 100%;
+        height: 100%; 
+        background-image: linear-gradient(#e5e7eb 1px, transparent 1px); 
+        background-size: 100% 32px; 
+        padding-left: 55px;
+        box-sizing: border-box;
+    }
+
+    /* 5. NÚMEROS DAS LINHAS */
+    .margem-numerica { 
+        position: absolute; 
+        left: 0; 
+        top: 0; 
+        width: 45px; 
+        height: 100%;
+        background: #f8fafc;
+        z-index: 2;
+        border-right: 1px solid #fca5a5;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .margem-numerica div {
+        height: 32px !important;
+        line-height: 32px !important;
+        text-align: center;
+        color: #94a3b8;
+        font-size: 11px;
+        font-weight: 600;
+    }
+
+    .margem-vermelha { position: absolute; left: 55px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; z-index: 1; }
+
+    /* 6. ÁREA DE TEXTO */
+    #texto-redacao { 
+        width: 100%; 
+        height: 100%;
+        background: transparent; 
+        border: none; 
+        outline: none; 
+        resize: none; 
+        font-family: 'Kalam', cursive; 
+        font-size: 19px; 
+        color: #2c3e50; 
+        padding: 0 15px; 
+        line-height: 32px; 
+        display: block; 
+        box-sizing: border-box; 
+        overflow-y: auto;
+    }
+
+    /* 7. BOTÕES */
+    .btn-enviar-final {
+        width: 100%; 
+        max-width: 800px;
+        margin: 20px auto; 
+        display: block; 
+        background: #003058; 
+        color: white; 
+        padding: 18px; 
+        border: none; 
+        border-radius: 12px; 
+        font-weight: 800; 
+        cursor: pointer;
+        transition: 0.3s;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .btn-acao-card {
+        background: #003058;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 11px;
+        cursor: pointer;
+        transition: 0.3s;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .btn-enviar-final:hover, .btn-acao-card:hover { background: #004075; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+
+    /* 8. CARDS DE LISTAGEM */
+    .card-aluno-atv { 
+        background: white; 
+        padding: 18px; 
+        border-radius: 16px; 
+        border: 1px solid #e2e8f0; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        gap: 15px; 
+        margin-bottom: 12px;
+        transition: 0.2s;
+    }
+    .card-aluno-atv:hover { border-color: #cbd5e1; transform: translateX(3px); }
+
+    @media (max-width: 600px) {
+        .container-escrita { padding: 15px; }
+        .folha-caderno { height: 500px !important; border-radius: 0; }
+        .card-aluno-atv { flex-direction: column; align-items: flex-start; }
+        .btn-acao-card { width: 100%; padding: 14px; }
+    }
+    
+    @media (min-width: 768px) {
+        .layout-proposta-flex { flex-direction: row; align-items: flex-start; }
+        #container-img-apoio { flex: 0 0 200px; order: 2; display: block; }
+        #tema-dinamico { order: 1; }
+        .card-topo-proposta { max-width: 800px; margin: 0 auto 20px auto !important; }
+    }
+</style>
+
+<div class="container-escrita">
+    <div class="header-prof">
+        <h1 id="main-title">ATIVIDADES</h1>
+        <p id="main-subtitle" style="color:#64748b;">Temas disponíveis para você praticar</p>
+    </div>
+    
+    <div class="pill-tab-container">
+        <button id="btn-tab-recebidas" class="pill-tab pill-active" onclick="window.switchTabEscrita('recebidas')">RECEBIDAS</button>
+        <button id="btn-tab-escrever" class="pill-tab pill-inactive" onclick="window.switchTabEscrita('escrever')">ESCREVER</button>
+        <button id="btn-tab-enviadas" class="pill-tab pill-inactive" onclick="window.switchTabEscrita('enviadas')">HISTÓRICO</button>
+    </div>
+
+    <div id="tab-recebidas">
+        <div id="lista-propostas-recebidas"></div>
+    </div>
+
+    <div id="tab-escrever" style="display:none;">
+        <div class="card-aluno-atv card-topo-proposta" style="display:block; border-left: 6px solid #003058; width: 100%; box-sizing: border-box;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                <h2 style="color:#003058; font-size:1.1rem; margin:0; font-weight:800;">PROPOSTA SELECIONADA</h2>
+                <span style="font-size:11px; font-weight:800; color:#e67e22; background:#fff3e0; padding:4px 8px; border-radius:6px;">
+                    PRAZO: <span id="prazo-dinamico">--/--/--</span>
+                </span>
+            </div>
+            <div class="layout-proposta-flex">
+                <div id="container-img-apoio">
+                    <img id="img-apoio-dinamica" src="">
                 </div>
-                <div class="layout-proposta-flex">
-                    <div id="container-img-apoio" style="display:none;">
-                        <img id="img-apoio-dinamica" src="">
+                <p id="tema-dinamico">Selecione uma atividade para começar...</p>
+            </div>
+        </div>
+
+        <div class="folha-caderno">
+            <div style="background:#f8fafc; padding:8px 20px; font-size:11px; font-weight:800; color:#64748b; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #c1c5cb; height: 35px;">
+                <div>PALAVRAS: <span id="contador-palavras">0</span> | LIMITE: 25 LINHAS</div>
+                <div id="salvamento-status" style="font-size:10px; color:#003058; font-weight:700; opacity:0; transition:0.3s;">Salvo</div>
+            </div>
+
+            <div class="linha-pautada">
+                <div class="scroll-content">
+                    <div class="margem-numerica">
+                        <div>01</div><div>02</div><div>03</div><div>04</div><div>05</div>
+                        <div>06</div><div>07</div><div>08</div><div>09</div><div>10</div>
+                        <div>11</div><div>12</div><div>13</div><div>14</div><div>15</div>
+                        <div>16</div><div>17</div><div>18</div><div>19</div><div>20</div>
+                        <div>21</div><div>22</div><div>23</div><div>24</div><div>25</div>
                     </div>
-                    <p id="tema-dinamico">Selecione uma atividade para começar...</p>
+                    <div class="margem-vermelha"></div>
+                    <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
                 </div>
             </div>
-            <div class="folha-caderno">
-                <div style="background:#f1f5f9; padding:8px 20px; font-size:11px; font-weight:800; color:#64748b; display:flex; justify-content:space-between; align-items:center; border-bottom: 1px solid #c1c5cb; height: 35px; box-sizing: border-box;">
-                    <div>PALAVRAS: <span id="contador-palavras">0</span> | LIMITE: 25 LINHAS</div>
-                    <div id="salvamento-status" style="font-size:10px; color:#003058; font-weight:700; opacity:0; transition:0.3s;">Salvo automaticamente</div>
-                </div>
-                <div class="linha-pautada">
-                    <div class="scroll-content">
-                        <div class="margem-numerica">
-                            <div>01</div><div>02</div><div>03</div><div>04</div><div>05</div><div>06</div><div>07</div><div>08</div><div>09</div><div>10</div>
-                            <div>11</div><div>12</div><div>13</div><div>14</div><div>15</div><div>16</div><div>17</div><div>18</div><div>19</div><div>20</div>
-                            <div>21</div><div>22</div><div>23</div><div>24</div><div>25</div>
-                        </div>
-                        <div class="margem-vermelha"></div>
-                        <textarea id="texto-redacao" spellcheck="false" placeholder="Inicie sua escrita aqui..."></textarea>
-                    </div>
-                </div>
-            </div>
-            <button class="btn-enviar-final" onclick="window.enviarRedacaoFinal()">ENVIAR REDAÇÃO</button>
         </div>
-        <div id="tab-enviadas" style="display:none;">
-            <div id="lista-redacoes-enviadas"></div>
-        </div>
-    </div>`;
+
+        <button class="btn-enviar-final" onclick="window.enviarRedacaoFinal()">ENTREGAR REDAÇÃO</button>
+    </div>
+
+    <div id="tab-enviadas" style="display:none;">
+        <div id="lista-redacoes-enviadas"></div>
+    </div>
+</div>`;
 });
