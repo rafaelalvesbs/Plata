@@ -542,21 +542,22 @@ window.Router.register('escritaalunoclm', async () => {
     /* MOBILE */
     @media (max-width: 600px) {
         .folha-caderno { 
-            height: 500px !important; 
+            height: 835px !important; 
             border-radius: 0;
             border-left: none;
             border-right: none;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
         }
 
         .linha-pautada {
-            overflow: auto !important;
+            height: 800px !important;
+            width: 300% !important;
             display: block !important;
-            -webkit-overflow-scrolling: touch;
         }
 
         .scroll-content {
-            width: 300% !important;
-            min-width: 300% !important;
+            width: 100% !important;
             height: 800px !important;
             min-height: 800px !important;
             background-size: 100% 32px !important;
@@ -564,16 +565,15 @@ window.Router.register('escritaalunoclm', async () => {
 
         #texto-redacao {
             width: 100% !important;
-            height: 100% !important;
+            height: 800px !important;
             font-size: 18px !important;
             white-space: nowrap !important;
             line-height: 32px !important;
             overflow: hidden !important;
         }
 
-        .margem-numerica {
-            height: 100% !important;
-            position: absolute !important;
+        .margem-numerica, .margem-numerica div {
+            height: 32px !important;
         }
 
         .card-aluno-atv { 
