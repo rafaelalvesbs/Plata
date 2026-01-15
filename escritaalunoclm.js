@@ -559,47 +559,44 @@ window.Router.register('escritaalunoclm', async () => {
     
     /* MOBILE */
     @media (max-width: 600px) {
-        /* MOBILE — BARRA HORIZONTAL DENTRO DO EDITOR */
-.folha-caderno {
-    overflow: hidden !important;
-}
+        .folha-caderno { 
+            height: 835px !important; 
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+        }
 
-.linha-pautada {
-    overflow: hidden !important;
-}
+        .linha-pautada {
+            height: 800px !important;
+            width: 100% !important;
+            display: block !important;
+        }
 
-/* MOBILE — NUMERAÇÃO VISÍVEL + QUEBRA DE TEXTO */
-.folha-caderno {
-    overflow: hidden !important;
-}
+        .scroll-content {
+            width: 300% !important;
+            min-width: 300% !important;
+            height: 800px !important;
+            min-height: 800px !important;
+            background-size: 100% 32px !important;
+            padding-left: 55px;
+        }
 
-.linha-pautada {
-    overflow: hidden !important;
-}
-
-.scroll-content {
-    overflow-x: hidden !important;
-    overflow-y: hidden !important;
-    width: 100% !important;
-}
-
-.margem-numerica {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    z-index: 10 !important;
-    background: #fff !important;
-}
-
-#texto-redacao {
-    width: 100% !important;
-    overflow-x: hidden !important;
-    overflow-y: auto !important;
-    white-space: pre-wrap !important;
-    word-break: break-word !important;
-}
-
-
+        #texto-redacao {
+            width: 100% !important;
+            height: 800px !important;
+            font-size: 18px !important;
+            white-space: pre !important;
+            word-wrap: normal !important;
+            overflow-wrap: normal !important;
+            line-height: 32px !important;
+            overflow-y: hidden !important;
+            overflow-x: auto !important;
+            display: block !important;
+            padding-right: 20px !important;
+            -webkit-overflow-scrolling: touch;
+        }
 
         .margem-numerica {
             position: absolute !important;
