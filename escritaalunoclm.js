@@ -574,28 +574,20 @@ window.Router.register('escritaalunoclm', async () => {
             display: block !important;
         }
 
-        .scroll-content {
-            width: 300% !important;
-            min-width: 300% !important;
-            height: 800px !important;
-            min-height: 800px !important;
-            background-size: 100% 32px !important;
-            padding-left: 55px;
-        }
-
         #texto-redacao {
             width: 100% !important;
             height: 800px !important;
             font-size: 18px !important;
-            white-space: pre !important;
-            word-wrap: normal !important;
-            overflow-wrap: normal !important;
             line-height: 32px !important;
-            overflow-y: hidden !important;
             overflow-x: auto !important;
             display: block !important;
             padding-right: 20px !important;
             -webkit-overflow-scrolling: touch;
+            overflow-x: auto !important;
+            overflow-y: auto !important;
+            white-space: pre-wrap !important;
+            word-break: break-word !important;
+
         }
 
         .margem-numerica {
