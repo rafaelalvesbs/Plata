@@ -549,19 +549,24 @@ window.Router.register('escritaalunoclm', async () => {
         }
 
         .linha-pautada {
-            overflow-y: scroll !important; 
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            display: block !important;
             -webkit-overflow-scrolling: touch;
         }
 
         .scroll-content {
-            height: 801px !important; 
-            min-height: 801px !important;
+            width: 300% !important;
+            min-width: 300% !important;
+            height: 835px !important;
         }
 
         #texto-redacao {
-            height: 801px !important; 
-            overflow: hidden !important; 
-            font-size: 18px; 
+            width: 100% !important;
+            height: 100% !important;
+            font-size: 18px;
+            white-space: nowrap !important;
+            overflow-x: hidden !important;
         }
 
         .card-aluno-atv { 
