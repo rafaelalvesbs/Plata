@@ -568,19 +568,37 @@ window.Router.register('escritaalunoclm', async () => {
     overflow: hidden !important;
 }
 
+/* MOBILE — NUMERAÇÃO VISÍVEL + QUEBRA DE TEXTO */
+.folha-caderno {
+    overflow: hidden !important;
+}
+
+.linha-pautada {
+    overflow: hidden !important;
+}
+
 .scroll-content {
-    overflow-x: auto !important;
+    overflow-x: hidden !important;
     overflow-y: hidden !important;
     width: 100% !important;
 }
 
-#texto-redacao {
-    min-width: 1600px !important;
-    overflow-x: auto !important;
-    overflow-y: hidden !important;
-    white-space: pre !important;
-    word-wrap: normal !important;
+.margem-numerica {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    z-index: 10 !important;
+    background: #fff !important;
 }
+
+#texto-redacao {
+    width: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+}
+
 
 
         .margem-numerica {
