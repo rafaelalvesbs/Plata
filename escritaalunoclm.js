@@ -567,9 +567,12 @@ window.Router.register('escritaalunoclm', async () => {
             width: 100% !important;
             height: 800px !important;
             font-size: 18px !important;
-            white-space: nowrap !important;
+            white-space: normal !important;
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
             line-height: 32px !important;
             overflow: hidden !important;
+            display: block !important;
         }
 
         .margem-numerica, .margem-numerica div {
