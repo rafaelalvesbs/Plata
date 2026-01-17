@@ -217,7 +217,7 @@ window.Router.register('escritaalunoclm', async () => {
             textarea.oninput = () => {
     const larguraJanela = window.innerWidth;
     // Ajuste fino: 42 caracteres para o novo tamanho mobile, 78 para desktop
-    const caracteresPorLinha = larguraJanela < 600 ? 65 : 78;
+    const caracteresPorLinha = larguraJanela < 600 ? 52 : 78;
     let conteudo = textarea.value;
     let linhasCalculadas = [];
     let parágrafos = conteudo.split('\n');
