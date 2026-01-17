@@ -2,6 +2,7 @@ window.Router.register('homealunoclm', async () => {
     const db = window.db;
     const { doc, getDoc, collection, query, where, onSnapshot, getDocs } = window.fsMethods;
     const azulPadrao = "#003058";
+    const verdeAlerta = "#22c55e"; // Cor verde para o alerta
 
     // 1. GARANTIR QUE AS VARIÁVEIS EXISTAM NO OBJETO WINDOW
     if (typeof window.countEscrita === 'undefined') window.countEscrita = null;
@@ -40,7 +41,6 @@ window.Router.register('homealunoclm', async () => {
                 const cardEl = document.getElementById(cardId);
                 
                 if (cardEl) {
-                    // Se o total atual for maior que o que ele viu, pisca.
                     if (totalAtual > ultimoVisto) {
                         cardEl.classList.add('blink-alerta');
                     } else {
@@ -73,36 +73,27 @@ window.Router.register('homealunoclm', async () => {
             };
             buscarEventoMaisProximo();
 
-            // --- MONITORAMENTO DE ATIVIDADES (COM CHECAGEM CRUZADA PARA ESCRITA) ---
+            // --- MONITORAMENTO DE ESCRITA ---
             const monitorarEscritaSincronizada = () => {
-    const qAtv = query(
-        collection(db, "atividades_enviadas"), 
-        where("tipo", "==", "escrita"),
-        where("turmasSelecionadas", "array-contains", turmaAluno)
-    );
-    
-    onSnapshot(qAtv, async (snapAtv) => {
-        const qResolvidas = query(collection(db, "redacoes"), where("alunoId", "==", user.uid));
-        const resolvidasSnap = await getDocs(qResolvidas);
-        
-        const idsFeitos = new Set();
-        resolvidasSnap.forEach(d => idsFeitos.add(d.data().atividadeId));
-
-        let pendentes = 0;
-        snapAtv.forEach(docAtv => {
-            if (!idsFeitos.has(docAtv.id)) pendentes++;
-        });
-
-        const el = document.getElementById('count-escrita');
-        if (el) el.innerText = pendentes;
-        window.countEscrita = pendentes;
-        verificarAlertaPersistent('card-escrita', pendentes);
-    });
-};
+                const qAtv = query(collection(db, "atividades_enviadas"), where("tipo", "==", "escrita"), where("turmasSelecionadas", "array-contains", turmaAluno));
+                onSnapshot(qAtv, async (snapAtv) => {
+                    const qResolvidas = query(collection(db, "redacoes"), where("alunoId", "==", user.uid));
+                    const resolvidasSnap = await getDocs(qResolvidas);
+                    const idsFeitos = new Set();
+                    resolvidasSnap.forEach(d => idsFeitos.add(d.data().atividadeId));
+                    let pendentes = 0;
+                    snapAtv.forEach(docAtv => { if (!idsFeitos.has(docAtv.id)) pendentes++; });
+                    const el = document.getElementById('count-escrita');
+                    if (el) el.innerText = pendentes;
+                    window.countEscrita = pendentes;
+                    verificarAlertaPersistent('card-escrita', pendentes);
+                });
+            };
             monitorarEscritaSincronizada();
 
+            // --- MONITORAMENTO GENÉRICO (ORAL, GRAMÁTICA, AUDITIVA) ---
             const monitorarPendentes = (tipo, elId, cardId, globalVar) => {
-                const q = query(collection(db, "atividades_enviadas"), where("turma", "==", turmaAluno), where("tipo", "==", tipo));
+                const q = query(collection(db, "atividades_enviadas"), where("tipo", "==", tipo), where("turma", "==", turmaAluno));
                 onSnapshot(q, (snap) => {
                     const total = snap.size;
                     const el = document.getElementById(elId);
@@ -116,26 +107,22 @@ window.Router.register('homealunoclm', async () => {
             monitorarPendentes("gramatica", "count-gramatica", "card-gramatica", "countGramatica");
             monitorarPendentes("auditiva", "count-auditiva", "card-auditiva", "countAuditiva");
 
-            // --- MONITORAMENTO DE FEEDBACKS E RESOLVIDAS ---
+            // --- FEEDBACKS E RESOLVIDAS ---
             onSnapshot(query(collection(db, "redacoes"), where("alunoId", "==", user.uid)), (snap) => {
                 const elCountFeedback = document.getElementById('card-feedback-count');
                 const elCountResolvidas = document.getElementById('card-resolvidas-count');
-                
                 const feedbacksValidos = snap.docs.filter(d => {
                     const data = d.data();
                     return data.status === 'corrigida' || data.feedbackProfessor || data.feedbackGeral;
                 }).length;
-
                 const totalResolvidas = snap.size;
-
                 if (elCountFeedback) elCountFeedback.innerText = feedbacksValidos;
                 if (elCountResolvidas) elCountResolvidas.innerText = totalResolvidas;
-
                 window.feedbackCount = feedbacksValidos;
                 verificarAlertaPersistent('card-feedback', feedbacksValidos);
             });
 
-            // --- MONITORAMENTO DE AVISOS ---
+            // --- AVISOS ---
             onSnapshot(collection(db, "avisos"), (snap) => {
                 const total = snap.size; 
                 const el = document.getElementById('card-avisos-count');
@@ -144,7 +131,7 @@ window.Router.register('homealunoclm', async () => {
                 verificarAlertaPersistent('card-avisos', total);
             });
 
-            // --- MONITORAMENTO DE MENSAGENS RECEBIDAS ---
+            // --- MENSAGENS RECEBIDAS ---
             onSnapshot(query(collection(db, "mensagens_diretas"), where("destinatarioId", "==", user.uid)), (snap) => {
                 const total = snap.size;
                 const el = document.getElementById('card-msg-count');
@@ -153,7 +140,7 @@ window.Router.register('homealunoclm', async () => {
                 verificarAlertaPersistent('card-msg', total);
             });
 
-            // --- MONITORAMENTO DE MENSAGENS ENVIADAS ---
+            // --- MENSAGENS ENVIADAS ---
             onSnapshot(query(collection(db, "mensagens_diretas"), where("remetenteId", "==", user.uid)), (snap) => {
                 const totalEnviadas = snap.size;
                 const elEnviadas = document.getElementById('card-enviadas-count');
@@ -163,14 +150,20 @@ window.Router.register('homealunoclm', async () => {
         } catch (e) { console.error(e); }
     };
 
-    // FUNÇÕES DE CLIQUE
+    // FUNÇÕES DE CLIQUE ATUALIZADAS
     window.acaoAtividadeTipo = (cardId, tipo) => {
         const total = document.getElementById(`count-${tipo}`)?.innerText || "0";
         const user = window.authMethods.getAuth().currentUser;
         localStorage.setItem(`visto_${cardId}_${user.uid}`, total);
         document.getElementById(cardId)?.classList.remove('blink-alerta');
-        window.location.hash = `#atividadesclm?tipo=${tipo}`; 
+        
+        if(tipo === 'gramatica') {
+            window.location.hash = '#gramaticaalunoclm';
+        } else {
+            window.location.hash = `#atividadesclm?tipo=${tipo}`; 
+        }
     };
+
     window.acaoEscrita = () => {
         const total = document.getElementById('count-escrita')?.innerText || "0";
         const user = window.authMethods.getAuth().currentUser;
@@ -178,6 +171,7 @@ window.Router.register('homealunoclm', async () => {
         document.getElementById('card-escrita')?.classList.remove('blink-alerta');
         window.location.hash = '#escritaalunoclm';
     };
+
     window.acaoAvisos = () => {
         const total = document.getElementById('card-avisos-count')?.innerText || "0";
         const user = window.authMethods.getAuth().currentUser;
@@ -185,6 +179,7 @@ window.Router.register('homealunoclm', async () => {
         document.getElementById('card-avisos')?.classList.remove('blink-alerta');
         window.location.hash = '#avisosclm';
     };
+
     window.acaoMensagens = () => {
         const total = document.getElementById('card-msg-count')?.innerText || "0";
         const user = window.authMethods.getAuth().currentUser;
@@ -192,6 +187,7 @@ window.Router.register('homealunoclm', async () => {
         document.getElementById('card-msg')?.classList.remove('blink-alerta');
         window.location.hash = '#mensagensclm';
     };
+
     window.acaoFeedbacks = () => {
         const total = document.getElementById('card-feedback-count')?.innerText || "0";
         const user = window.authMethods.getAuth().currentUser;
@@ -214,20 +210,22 @@ window.Router.register('homealunoclm', async () => {
             .card-aluno .count { font-size: 2.5rem; font-weight: 800; color: ${azulPadrao}; }
             .clickable { cursor: pointer; }
             .clickable:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+            
+            /* Alerta em Verde conforme solicitado */
             .blink-alerta { 
-                animation: pulse-verde-fix 1s infinite !important; 
-                border-top-color: #22c55e !important; 
-                box-shadow: 0 0 15px rgba(34, 197, 94, 0.4) !important;
+                animation: pulse-verde-aluno 1.5s infinite !important; 
+                border-top-color: ${verdeAlerta} !important; 
+                box-shadow: 0 0 15px rgba(34, 197, 94, 0.2) !important;
             }
-            @keyframes pulse-verde-fix {
+            @keyframes pulse-verde-aluno {
                 0% { background-color: #ffffff; }
-                50% { background-color: #dcfce7; }
+                50% { background-color: #f0fdf4; }
                 100% { background-color: #ffffff; }
             }
         </style>
 
         <div class="header-prof">
-            <h1 id="boas-vindas-aluno" style="text-transform: uppercase;">Carregando...</h1>
+            <h1 id="boas-vindas-aluno" style="text-transform: uppercase; color: ${azulPadrao};">Carregando...</h1>
         </div>
         <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eef2f6;">
         
