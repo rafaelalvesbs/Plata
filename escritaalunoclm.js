@@ -216,7 +216,7 @@ window.Router.register('escritaalunoclm', async () => {
         if (textarea) {
             textarea.oninput = (e) => {
     const larguraJanela = window.innerWidth;
-    const caracteresPorLinha = larguraJanela < 600 ? 30 : 85;
+    const caracteresPorLinha = larguraJanela < 600 ? 28 : 78;
     let conteudo = textarea.value;
     let linhasCalculadas = [];
     let parágrafos = conteudo.split('\n');
@@ -509,31 +509,21 @@ window.Router.register('escritaalunoclm', async () => {
         font-family: 'Kalam', cursive; 
         font-size: 19px; 
         color: #2c3e50; 
-        padding: 0 15px; 
-        line-height: 21.44px !important;
+        padding: 4px 15px 0 15px; 
+        line-height: 32px; 
         display: block; 
         box-sizing: border-box; 
         overflow-y: auto;
-        overflow-x: auto;
+        overflow-x: hidden;
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
         overflow-wrap: break-word !important;
     }
 
-    /* ESTILIZAÇÃO DA BARRA DE ROLAGEM HORIZONTAL */
-    #texto-redacao::-webkit-scrollbar {
-        height: 8px;
-    }
-    #texto-redacao::-webkit-scrollbar-track {
-        background: #f1f1f1;
-    }
-    #texto-redacao::-webkit-scrollbar-thumb {
-        background: #003058;
-        border-radius: 4px;
-    }
-    #texto-redacao::-webkit-scrollbar-thumb:hover {
-        background: #004075;
-    }
+    #texto-redacao::-webkit-scrollbar { height: 8px; }
+    #texto-redacao::-webkit-scrollbar-track { background: #f1f1f1; }
+    #texto-redacao::-webkit-scrollbar-thumb { background: #003058; border-radius: 4px; }
+    #texto-redacao::-webkit-scrollbar-thumb:hover { background: #004075; }
 
     /* 7. BOTÕES (AÇÃO E ENVIAR FINAL) */
     .btn-enviar-final {
@@ -550,7 +540,6 @@ window.Router.register('escritaalunoclm', async () => {
         transition: 0.3s;
     }
 
-    /* Botão Editar/Ação dentro dos Cards das Listas */
     .btn-acao-card {
         background: #003058;
         color: white;
@@ -568,7 +557,7 @@ window.Router.register('escritaalunoclm', async () => {
     .btn-enviar-final:hover, .btn-acao-card:hover { background: #004075; transform: translateY(-1px); }
     .btn-enviar-final:active, .btn-acao-card:active { transform: translateY(0); }
 
-    /* 8. CARDS DE LISTAGEM (REDAÇÕES RECEBIDAS/ENVIADAS) */
+    /* 8. CARDS DE LISTAGEM */
     .card-aluno-atv { 
         background: white; 
         padding: 16px; 
@@ -582,99 +571,61 @@ window.Router.register('escritaalunoclm', async () => {
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
 
-    /* ============================================================
-       9. RESPONSIVIDADE
-       ============================================================ */
-    
-    /* MOBILE */
+    /* 9. RESPONSIVIDADE */
     @media (max-width: 600px) {
         .folha-caderno { 
             height: 571px !important;
             border-radius: 0;
             border-left: none;
             border-right: none;
-            overflow-x: auto !important;
-            overflow-y: hidden !important;
+            overflow: hidden !important;
         }
 
         .linha-pautada {
-            height: 800px !important;
+            height: 100% !important;
             width: 100% !important;
             display: block !important;
         }
 
         .scroll-content {
-            width: 300% !important;
-            min-width: 300% !important;
-            height: 800px !important;
-            min-height: 800px !important;
+            width: 100% !important;
+            height: 100% !important;
             background-size: 100% 21.44px !important;
             padding-left: 55px;
         }
 
         #texto-redacao {
             width: 100% !important;
-            height: 800px !important;
-            font-size: 18px !important;
-            white-space: pre-wrap !important;
-            white-space: pre-wrap !important;
-            overflow-wrap: break-word !important;
-            line-height: 32px !important;
+            height: 100% !important;
+            font-size: 14px !important;
+            line-height: 21.44px !important;
+            padding: 1px 15px 0 15px !important;
             overflow-y: hidden !important;
             overflow-x: hidden !important;
-            display: block !important;
-            padding-right: 20px !important;
-            -webkit-overflow-scrolling: touch;
         }
 
         .margem-numerica {
-            position: absolute !important;
-            left: 0 !important;
-            top: 0 !important;
             width: 45px !important;
-            height: 800px !important;
-            background: #fff !important;
-            z-index: 10 !important; /* Isso garante que os números fiquem por cima */
-            border-right: 1px solid #fca5a5 !important;
-            display: flex !important;
-            flex-direction: column !important;
+            height: 100% !important;
+            z-index: 10 !important;
         }
 
         .margem-numerica div {
             height: 21.44px !important;
             line-height: 21.44px !important;
-            text-align: center !important;
-            color: #94a3b8 !important;
-            font-size: 11px !important;
-            width: 45px !important;
+            font-size: 10px !important;
         }
 
-        .card-aluno-atv { 
-            flex-direction: column; 
-            align-items: flex-start;
-        }
-        
-        .btn-acao-card {
-            width: 100%;
-            padding: 14px;
-        }
+        .card-aluno-atv { flex-direction: column; align-items: flex-start; }
+        .btn-acao-card { width: 100%; padding: 14px; }
     }
 
-    /* DESKTOP */
     @media (min-width: 768px) {
         .layout-proposta-flex { flex-direction: row; align-items: flex-start; }
         #container-img-apoio { flex: 0 0 180px; order: 2; display: block; }
         #tema-dinamico { order: 1; }
-        
-        .btn-enviar-final {
-            max-width: 800px;
-        }
-
-        /* Garante que o card de proposta selecionada tenha o mesmo max-width do editor */
-        .card-topo-proposta {
-            max-width: 800px;
-            margin: 0 auto 20px auto !important;
-        }
+        .btn-enviar-final { max-width: 800px; }
+        .card-topo-proposta { max-width: 800px; margin: 0 auto 20px auto !important; }
     }
 </style>
 
