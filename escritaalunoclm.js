@@ -214,9 +214,10 @@ window.Router.register('escritaalunoclm', async () => {
         const saveIndicator = document.getElementById('salvamento-status');
 
         if (textarea) {
-            textarea.oninput = (e) => {
+            textarea.oninput = () => {
     const larguraJanela = window.innerWidth;
-    const caracteresPorLinha = larguraJanela < 600 ? 28 : 78;
+    // Ajuste fino: 42 caracteres para o novo tamanho mobile, 78 para desktop
+    const caracteresPorLinha = larguraJanela < 600 ? 42 : 78;
     let conteudo = textarea.value;
     let linhasCalculadas = [];
     let parágrafos = conteudo.split('\n');
@@ -232,7 +233,6 @@ window.Router.register('escritaalunoclm', async () => {
     });
 
     if (linhasCalculadas.length > 25) {
-        // Reconstrói o texto apenas com o que cabe nas 25 linhas
         let textoValido = "";
         let contadorLinhas = 0;
         
