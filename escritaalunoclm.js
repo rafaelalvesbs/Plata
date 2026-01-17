@@ -216,7 +216,7 @@ window.Router.register('escritaalunoclm', async () => {
         if (textarea) {
             textarea.oninput = (e) => {
     const larguraJanela = window.innerWidth;
-    const caracteresPorLinha = larguraJanela < 600 ? 45 : 85;
+    const caracteresPorLinha = larguraJanela < 600 ? 30 : 85;
     let conteudo = textarea.value;
     let linhasCalculadas = [];
     let parágrafos = conteudo.split('\n');
@@ -510,7 +510,7 @@ window.Router.register('escritaalunoclm', async () => {
         font-size: 19px; 
         color: #2c3e50; 
         padding: 0 15px; 
-        line-height: 32px; 
+        line-height: 21.44px !important;
         display: block; 
         box-sizing: border-box; 
         overflow-y: auto;
@@ -589,7 +589,7 @@ window.Router.register('escritaalunoclm', async () => {
     /* MOBILE */
     @media (max-width: 600px) {
         .folha-caderno { 
-            height: 835px !important; 
+            height: 571px !important;
             border-radius: 0;
             border-left: none;
             border-right: none;
@@ -608,7 +608,7 @@ window.Router.register('escritaalunoclm', async () => {
             min-width: 300% !important;
             height: 800px !important;
             min-height: 800px !important;
-            background-size: 100% 32px !important;
+            background-size: 100% 21.44px !important;
             padding-left: 55px;
         }
 
@@ -641,8 +641,8 @@ window.Router.register('escritaalunoclm', async () => {
         }
 
         .margem-numerica div {
-            height: 32px !important;
-            line-height: 32px !important;
+            height: 21.44px !important;
+            line-height: 21.44px !important;
             text-align: center !important;
             color: #94a3b8 !important;
             font-size: 11px !important;
