@@ -215,30 +215,45 @@ window.Router.register('escritaalunoclm', async () => {
 
         if (textarea) {
             textarea.oninput = () => {
-                // Lógica de limite de linhas
-                const linhas = textarea.value.split('\n');
-                if (linhas.length > 25) { textarea.value = linhas.slice(0, 25).join('\n'); }
-                
-                const texto = textarea.value;
-                const textoTrim = texto.trim();
-                
-                // Atualiza contador de palavras
-                wordCountSpan.innerText = textoTrim ? textoTrim.split(/\s+/).length : 0;
+    // Força a quebra de linha visual para o cálculo de limite
+    const larguraMaximaMobile = 45; 
+    let conteudo = textarea.value;
+    let linhasFinais = [];
+    let blocosDeTexto = conteudo.split('\n');
 
-                // --- SALVAMENTO AUTOMÁTICO (LocalStorage) ---
-                if (propostaAtiva) {
-                    const idKey = propostaAtiva.idOriginal || propostaAtiva.id;
-                    localStorage.setItem(`rascunho_${idKey}_${user.uid}`, texto);
-                    
-                    // Feedback visual sutil de salvamento
-                    if (saveIndicator) {
-                        saveIndicator.innerText = "Alterações salvas automaticamente";
-                        saveIndicator.style.opacity = "1";
-                        clearTimeout(window.saveTimeout);
-                        window.saveTimeout = setTimeout(() => { saveIndicator.style.opacity = "0"; }, 2000);
-                    }
-                }
-            };
+    blocosDeTexto.forEach(bloco => {
+        if (bloco.length > larguraMaximaMobile) {
+            // Quebra strings longas sem espaços em sublinhas
+            for (let i = 0; i < bloco.length; i += larguraMaximaMobile) {
+                linhasFinais.push(bloco.substring(i, i + larguraMaximaMobile));
+            }
+        } else {
+            linhasFinais.push(bloco);
+        }
+    });
+
+    // Aplica a trava de 25 linhas totais (reais + automáticas)
+    if (linhasFinais.length > 25) {
+        textarea.value = linhasFinais.slice(0, 25).join('\n');
+    }
+
+    // Atualiza contador de palavras
+    const textoLimpo = textarea.value.trim();
+    wordCountSpan.innerText = textoLimpo ? textoLimpo.split(/\s+/).length : 0;
+
+    // Salvamento LocalStorage
+    if (propostaAtiva) {
+        const idKey = propostaAtiva.idOriginal || propostaAtiva.id;
+        localStorage.setItem(`rascunho_${idKey}_${user.uid}`, textarea.value);
+        
+        if (saveIndicator) {
+            saveIndicator.innerText = "Alterações salvas automaticamente";
+            saveIndicator.style.opacity = "1";
+            clearTimeout(window.saveTimeout);
+            window.saveTimeout = setTimeout(() => { saveIndicator.style.opacity = "0"; }, 2000);
+        }
+    }
+};
             
             const textoInicial = textarea.value.trim();
             wordCountSpan.innerText = textoInicial ? textoInicial.split(/\s+/).length : 0;
@@ -587,12 +602,12 @@ window.Router.register('escritaalunoclm', async () => {
             width: 100% !important;
             height: 800px !important;
             font-size: 18px !important;
-            white-space: pre !important;
-            word-wrap: normal !important;
-            overflow-wrap: normal !important;
+            white-space: pre-wrap !important;
+            white-space: pre-wrap !important;
+            overflow-wrap: break-word !important;
             line-height: 32px !important;
             overflow-y: hidden !important;
-            overflow-x: auto !important;
+            overflow-x: hidden !important;
             display: block !important;
             padding-right: 20px !important;
             -webkit-overflow-scrolling: touch;
