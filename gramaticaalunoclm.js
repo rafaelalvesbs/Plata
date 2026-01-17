@@ -45,8 +45,32 @@ window.Router.register('gramaticaalunoclm', async () => {
         } catch (e) { console.error("Erro ao carregar perfil:", e); }
     };
 
+    window.confirmarAcao = (mensagem, callback) => {
+        const modal = document.getElementById('modal-confirmacao-moderno');
+        document.getElementById('confirm-msg').innerText = mensagem;
+        modal.style.display = 'flex';
+        window.confirmCallback = () => {
+            modal.style.display = 'none';
+            callback();
+        };
+    };
+
+    window.exibirAlertaMensagem = (titulo, msg) => {
+        const modal = document.getElementById('modal-alerta-simples');
+        document.getElementById('alerta-titulo').innerText = titulo;
+        document.getElementById('alerta-msg').innerText = msg;
+        modal.style.display = 'flex';
+    };
+
     window.voltarParaLista = () => {
-        if (!modoVisualizacao && !confirm("Deseja realmente sair? Seu progresso nesta tentativa será perdido.")) return;
+        if (modoVisualizacao) {
+            executarSaida();
+        } else {
+            window.confirmarAcao("Deseja realmente sair? Seu progresso nesta tentativa será perdido.", executarSaida);
+        }
+    };
+
+    const executarSaida = () => {
         if (intervaloCronometro) clearInterval(intervaloCronometro);
         document.getElementById('view-resolver').style.display = 'none';
         document.getElementById('main-view-aluno').style.display = 'block';
@@ -264,19 +288,46 @@ window.Router.register('gramaticaalunoclm', async () => {
 
     window.setResp = (idx, letra) => { respostasAluno[idx] = letra; window.irParaQuestao(idx); };
 
-    window.finalizarAtividade = async () => {
-        if (!confirm("Deseja finalizar e enviar suas respostas?")) return;
+    window.finalizarAtividade = () => {
+        const respondidas = Object.keys(respostasAluno).length;
+        const total = atividadeSelecionada.questoes.length;
+        
+        if (respondidas < total) {
+            window.exibirAlertaMensagem("Atenção", `Você respondeu ${respondidas} de ${total} questões. Responda todas antes de enviar.`);
+            return;
+        }
+
+        window.confirmarAcao("Deseja finalizar e enviar suas respostas?", enviarDadosFinais);
+    };
+
+    const enviarDadosFinais = async () => {
         if (intervaloCronometro) clearInterval(intervaloCronometro);
         const tempoFinal = Math.floor((Date.now() - tempoInicio) / 1000);
         let acertos = 0;
         atividadeSelecionada.questoes.forEach((q, i) => { if(respostasAluno[i] === q.correta) acertos++; });
         const nota = ((acertos / atividadeSelecionada.questoes.length) * 10).toFixed(1);
-        await addDoc(collection(db, "respostas_alunos"), {
-            atividadeId: atividadeSelecionada.id, titulo: atividadeSelecionada.titulo,
-            alunoId: dadosTurmaAluno.alunoId, respostas: respostasAluno, nota: nota,
-            tempoGasto: tempoFinal, semestre: dadosTurmaAluno.semestre, dataEntrega: serverTimestamp()
-        });
-        location.reload();
+        
+        try {
+            await addDoc(collection(db, "respostas_alunos"), {
+                atividadeId: atividadeSelecionada.id, titulo: atividadeSelecionada.titulo,
+                alunoId: dadosTurmaAluno.alunoId, respostas: respostasAluno, nota: nota,
+                tempoGasto: tempoFinal, semestre: dadosTurmaAluno.semestre, dataEntrega: serverTimestamp()
+            });
+
+            document.getElementById('resultado-nota-valor').innerText = nota;
+            document.getElementById('resultado-tempo-valor').innerText = window.formatarTempoExterno(tempoFinal);
+            document.getElementById('modal-resultado-nota').style.display = 'flex';
+
+        } catch (e) {
+            window.exibirAlertaMensagem("Erro", "Não foi possível salvar sua atividade. Tente novamente.");
+        }
+    };
+
+    window.fecharEIrParaEnviadas = () => {
+        document.getElementById('modal-resultado-nota').style.display = 'none';
+        document.getElementById('view-resolver').style.display = 'none';
+        document.getElementById('main-view-aluno').style.display = 'block';
+        window.switchTabAluno('enviadas');
     };
 
     setTimeout(buscarDadosContexto, 300);
@@ -331,23 +382,64 @@ window.Router.register('gramaticaalunoclm', async () => {
         .btn-acao-enviar { background:#003058; color:#fff; border:none; height:46px; border-radius:12px; font-weight:700; cursor:pointer; padding: 0 25px; box-shadow: 0 4px 6px rgba(0,48,88,0.2); }
 
         .modal-aluno { position:fixed; inset:0; background:rgba(0,48,88,0.4); backdrop-filter: blur(6px); display:none; align-items:center; justify-content:center; padding:20px; z-index:9999; }
-        .modal-content-aluno { background:#fff; width:100%; max-width:380px; border-radius:24px; padding:30px; text-align:center; }
+        .modal-content-aluno { background:#fff; width:100%; max-width:380px; border-radius:24px; padding:30px; text-align:center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
         .tab-btn-aluno { padding:10px 15px; border:none; background:none; font-weight:700; color:#94a3b8; cursor:pointer; }
         .tab-btn-aluno.active { color:#003058; border-bottom:3px solid #003058; }
         .nota-badge-circular { width:32px; height:32px; border-radius:50%; background:#003058; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
         .btn-olho-revisao { background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 10px; color: #003058; cursor: pointer; }
 
+        .resultado-score-circle { width: 100px; height: 100px; border-radius: 50%; background: #f0f7ff; border: 5px solid #003058; display: flex; flex-direction: column; align-items: center; justify-content: center; margin: 0 auto 20px auto; }
+        .score-num { font-size: 32px; font-weight: 900; color: #003058; line-height: 1; }
+        .score-label { font-size: 10px; text-transform: uppercase; color: #64748b; font-weight: 700; }
+
         @media (max-width: 600px) { 
             .container-questao-corpo.layout-com-foto { flex-direction: column-reverse; } 
             .btn-acao-enviar { width: 100%; }
         }
-        
-        .img-texto-pequena-central { display: none; }
-        #m-texto-img img { max-width: 150px !important; height: auto; }
-        
     </style>
 
     <div class="gram-aluno-wrapper">
+        <div id="modal-confirmacao-moderno" class="modal-aluno" style="z-index: 10000;">
+            <div class="modal-content-aluno">
+                <div style="font-size:35px; color:#003058; margin-bottom:15px;"><i class="fa-solid fa-circle-question"></i></div>
+                <h2 style="color:#003058; font-size:18px; margin-bottom:10px; font-weight:800;">Confirmação</h2>
+                <p id="confirm-msg" style="color:#64748b; font-size:14px; margin-bottom:25px; line-height:1.5;"></p>
+                <div style="display:flex; gap:10px;">
+                    <button onclick="document.getElementById('modal-confirmacao-moderno').style.display='none'" style="flex:1; background:#f1f5f9; color:#64748b; border:none; height:46px; border-radius:12px; font-weight:700; cursor:pointer;">CANCELAR</button>
+                    <button onclick="window.confirmCallback()" style="flex:1; background:#003058; color:#fff; border:none; height:46px; border-radius:12px; font-weight:700; cursor:pointer;">CONFIRMAR</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="modal-alerta-simples" class="modal-aluno" style="z-index: 10001;">
+            <div class="modal-content-aluno">
+                <div style="font-size:35px; color:#003058; margin-bottom:15px;"><i class="fa-solid fa-circle-exclamation"></i></div>
+                <h2 id="alerta-titulo" style="color:#003058; font-size:18px; margin-bottom:10px; font-weight:800;">Aviso</h2>
+                <p id="alerta-msg" style="color:#64748b; font-size:14px; margin-bottom:25px; line-height:1.5;"></p>
+                <button onclick="document.getElementById('modal-alerta-simples').style.display='none'" style="width:100%; background:#003058; color:#fff; border:none; height:46px; border-radius:12px; font-weight:700; cursor:pointer;">ENTENDI</button>
+            </div>
+        </div>
+
+        <div id="modal-resultado-nota" class="modal-aluno" style="z-index: 10002;">
+            <div class="modal-content-aluno">
+                <div style="font-size:40px; color:#003058; margin-bottom:10px;"><i class="fa-solid fa-trophy"></i></div>
+                <h2 style="color:#003058; font-size:22px; margin-bottom:5px; font-weight:800;">Atividade Concluída!</h2>
+                <p style="color:#64748b; font-size:13px; margin-bottom:20px;">Suas respostas foram enviadas com sucesso.</p>
+                
+                <div class="resultado-score-circle">
+                    <span class="score-num" id="resultado-nota-valor">0.0</span>
+                    <span class="score-label">Sua Nota</span>
+                </div>
+
+                <div style="background:#f8fafc; padding:10px; border-radius:12px; margin-bottom:25px;">
+                    <span style="color:#64748b; font-size:12px;">Tempo de resolução: </span>
+                    <strong style="color:#003058; font-size:12px;" id="resultado-tempo-valor">00:00</strong>
+                </div>
+
+                <button onclick="window.fecharEIrParaEnviadas()" style="width:100%; background:#003058; color:#fff; border:none; height:50px; border-radius:15px; font-weight:700; cursor:pointer; font-size:15px;">VER MEU HISTÓRICO</button>
+            </div>
+        </div>
+
         <div id="modal-aviso-cronometro" class="modal-aluno">
             <div class="modal-content-aluno">
                 <div style="font-size:35px; color:#003058; margin-bottom:15px;"><i class="fa-solid fa-stopwatch"></i></div>
