@@ -13,7 +13,10 @@ window.Router.register('gramaticaalunoclm', async () => {
     let intervaloCronometro = null;
     let questaoAtualIndex = 0;
 
-    // --- SEGURANÇA TOTAL ---
+    let paginaAtualRecebidas = 1;
+    let paginaAtualEnviadas = 1;
+    const itensPorPagina = 6;
+
     const bloquearAcoes = (e) => { e.preventDefault(); return false; };
     document.addEventListener('copy', bloquearAcoes);
     document.addEventListener('paste', bloquearAcoes);
@@ -42,6 +45,14 @@ window.Router.register('gramaticaalunoclm', async () => {
         } catch (e) { console.error("Erro ao carregar perfil:", e); }
     };
 
+    window.voltarParaLista = () => {
+        if (!modoVisualizacao && !confirm("Deseja realmente sair? Seu progresso nesta tentativa será perdido.")) return;
+        if (intervaloCronometro) clearInterval(intervaloCronometro);
+        document.getElementById('view-resolver').style.display = 'none';
+        document.getElementById('main-view-aluno').style.display = 'block';
+        if (modoVisualizacao) carregarEnviadas(); else carregarRecebidas();
+    };
+
     window.switchTabAluno = async (tab) => {
         document.querySelectorAll('.tab-btn-aluno').forEach(b => b.classList.remove('active'));
         document.getElementById(`btn-tab-${tab}`).classList.add('active');
@@ -51,9 +62,25 @@ window.Router.register('gramaticaalunoclm', async () => {
         else carregarEnviadas();
     };
 
+    const renderizarPaginacao = (totalItens, paginaAtual, tab) => {
+        const totalPaginas = Math.ceil(totalItens / itensPorPagina);
+        if (totalPaginas <= 1) return '';
+        return `
+            <div class="pagination-container">
+                <button class="btn-pag" ${paginaAtual === 1 ? 'disabled' : ''} onclick="window.mudarPagina('${tab}', ${paginaAtual - 1})"><i class="fa-solid fa-angle-left"></i></button>
+                <span class="pag-info">${paginaAtual} / ${totalPaginas}</span>
+                <button class="btn-pag" ${paginaAtual === totalPaginas ? 'disabled' : ''} onclick="window.mudarPagina('${tab}', ${paginaAtual + 1})"><i class="fa-solid fa-angle-right"></i></button>
+            </div>`;
+    };
+
+    window.mudarPagina = (tab, novaPagina) => {
+        if (tab === 'recebidas') { paginaAtualRecebidas = novaPagina; exibirCardsRecebidas(); } 
+        else { paginaAtualEnviadas = novaPagina; exibirCardsEnviadas(); }
+    };
+
     const carregarRecebidas = async () => {
         const container = document.getElementById('lista-recebidas');
-        container.innerHTML = '<div class="loading-simple">Buscando...</div>';
+        container.innerHTML = '<div class="loader-container"><div class="spinner-modern"></div></div>';
         try {
             const qAtv = query(collection(db, "atividades_enviadas"), where("semestre", "==", dadosTurmaAluno.semestre), where("tipo", "==", "gramatica"));
             const snapAtv = await getDocs(qAtv);
@@ -61,42 +88,70 @@ window.Router.register('gramaticaalunoclm', async () => {
             const snapResp = await getDocs(qResp);
             const respondidasIds = snapResp.docs.map(d => d.data().atividadeId);
             atividadesRecebidas = snapAtv.docs.map(d => ({ id: d.id, ...d.data() })).filter(atv => !respondidasIds.includes(atv.id));
-            container.innerHTML = atividadesRecebidas.length ? atividadesRecebidas.map(atv => `
-                <div class="card-premium-list" onclick="window.confirmarInicioAtividade('${atv.id}')">
-                    <div style="flex:1">
-                        <h3 class="atv-titulo-list">${atv.titulo || 'Atividade'}</h3>
-                        <div class="atv-sub-list">Semestre: ${atv.semestre}</div>
+            exibirCardsRecebidas();
+        } catch (e) { container.innerHTML = '<div class="empty-state">Erro ao carregar.</div>'; }
+    };
+
+    const exibirCardsRecebidas = () => {
+        const container = document.getElementById('lista-recebidas');
+        const inicio = (paginaAtualRecebidas - 1) * itensPorPagina;
+        const fim = inicio + itensPorPagina;
+        const itensExibidos = atividadesRecebidas.slice(inicio, fim);
+        container.innerHTML = itensExibidos.length ? itensExibidos.map(atv => `
+            <div class="card-premium-list" onclick="window.confirmarInicioAtividade('${atv.id}')">
+                <div style="flex:1">
+                    <h3 class="atv-titulo-list">${atv.titulo || 'Atividade'}</h3>
+                    <div class="atv-sub-list">
+                        <span><i class="fa-solid fa-calendar-day"></i> Semestre: ${atv.semestre}</span>
                     </div>
-                    <i class="fa-solid fa-chevron-right" style="color:#cbd5e1"></i>
-                </div>`).join('') : '<div class="empty-state">Nenhuma pendente.</div>';
-        } catch (e) { container.innerHTML = '<div class="empty-state">Erro.</div>'; }
+                </div>
+                <i class="fa-solid fa-chevron-right" style="color:#003058"></i>
+            </div>`).join('') + renderizarPaginacao(atividadesRecebidas.length, paginaAtualRecebidas, 'recebidas') 
+            : '<div class="empty-state">Nenhuma atividade pendente.</div>';
     };
 
     const carregarEnviadas = async () => {
         const container = document.getElementById('lista-enviadas');
-        container.innerHTML = '<div class="loading-simple">Carregando...</div>';
-        const q = query(collection(db, "respostas_alunos"), where("alunoId", "==", dadosTurmaAluno.alunoId));
-        const snap = await getDocs(q);
-        atividadesEnviadas = [];
-        for(let docSnap of snap.docs) {
-            const data = docSnap.data();
-            const refOrig = await getDoc(doc(db, "atividades_enviadas", data.atividadeId));
-            atividadesEnviadas.push({ ...data, idResp: docSnap.id, dadosOriginais: refOrig.exists() ? refOrig.data() : null });
-        }
-        container.innerHTML = atividadesEnviadas.length ? atividadesEnviadas.map(atv => `
+        container.innerHTML = '<div class="loader-container"><div class="spinner-modern"></div></div>';
+        try {
+            const q = query(collection(db, "respostas_alunos"), where("alunoId", "==", dadosTurmaAluno.alunoId));
+            const snap = await getDocs(q);
+            atividadesEnviadas = [];
+            for(let docSnap of snap.docs) {
+                const data = docSnap.data();
+                const refOrig = await getDoc(doc(db, "atividades_enviadas", data.atividadeId));
+                atividadesEnviadas.push({ ...data, idResp: docSnap.id, dadosOriginais: refOrig.exists() ? refOrig.data() : null });
+            }
+            exibirCardsEnviadas();
+        } catch (e) { container.innerHTML = '<div class="empty-state">Erro ao carregar histórico.</div>'; }
+    };
+
+    const exibirCardsEnviadas = () => {
+        const container = document.getElementById('lista-enviadas');
+        const inicio = (paginaAtualEnviadas - 1) * itensPorPagina;
+        const fim = inicio + itensPorPagina;
+        const itensExibidos = atividadesEnviadas.slice(inicio, fim);
+        container.innerHTML = itensExibidos.length ? itensExibidos.map(atv => {
+            const dataFmt = atv.dataEntrega ? new Date(atv.dataEntrega.seconds * 1000).toLocaleDateString('pt-BR') : '---';
+            return `
             <div class="card-premium-list enviada">
                 <div style="flex:1">
                     <h3 class="atv-titulo-list">${atv.titulo || 'Atividade'}</h3>
-                    <div class="atv-sub-list"><span><i class="fa-regular fa-circle-check"></i> Concluída</span></div>
+                    <div class="atv-sub-list">
+                        <span><i class="fa-regular fa-calendar"></i> ${dataFmt}</span> | 
+                        <span><i class="fa-regular fa-clock"></i> ${window.formatarTempoExterno(atv.tempoGasto)}</span>
+                    </div>
                 </div>
                 <div style="display:flex; align-items:center; gap:10px;">
                     <button class="btn-olho-revisao" onclick="window.revisarAtividade('${atv.idResp}')"><i class="fa-solid fa-eye"></i></button>
                     <div class="nota-badge-circular">${atv.nota}</div>
                 </div>
-            </div>`).join('') : '<div class="empty-state">Sem histórico.</div>';
+            </div>`;
+        }).join('') + renderizarPaginacao(atividadesEnviadas.length, paginaAtualEnviadas, 'enviadas')
+        : '<div class="empty-state">Sem histórico de atividades.</div>';
     };
 
-    const formatarTempo = (segundosTotal) => {
+    window.formatarTempoExterno = (segundosTotal) => {
         const mins = Math.floor(segundosTotal / 60);
         const segs = segundosTotal % 60;
         return `${mins.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
@@ -107,7 +162,7 @@ window.Router.register('gramaticaalunoclm', async () => {
         const display = document.getElementById('tempo-cronometro');
         intervaloCronometro = setInterval(() => {
             const decorrido = Math.floor((Date.now() - tempoInicio) / 1000);
-            if(display) display.innerText = formatarTempo(decorrido);
+            if(display) display.innerText = window.formatarTempoExterno(decorrido);
         }, 1000);
     };
 
@@ -122,6 +177,7 @@ window.Router.register('gramaticaalunoclm', async () => {
         document.getElementById('main-view-aluno').style.display = 'none';
         document.getElementById('view-resolver').style.display = 'block';
         document.getElementById('header-atv-titulo').innerText = atividadeSelecionada.titulo;
+        document.getElementById('cronometro-container').style.display = 'block';
         iniciarCronometroVisual();
         window.irParaQuestao(0);
     };
@@ -132,7 +188,7 @@ window.Router.register('gramaticaalunoclm', async () => {
         document.getElementById('m-texto-body').innerText = atividadeSelecionada.textoContexto || "";
         const imgC = document.getElementById('m-texto-img');
         if(atividadeSelecionada.fotoTextoContexto) {
-            imgC.innerHTML = `<img src="${atividadeSelecionada.fotoTextoContexto}" class="img-texto-pequena-central">`;
+            imgC.innerHTML = `<img src="${atividadeSelecionada.fotoTextoContexto}" style="display: block; margin: 0 auto 15px auto; max-width: 150px; width: 100%; border-radius: 8px;">`;
             imgC.style.display = 'block';
         } else imgC.style.display = 'none';
         modal.style.display = 'flex';
@@ -209,6 +265,7 @@ window.Router.register('gramaticaalunoclm', async () => {
     window.setResp = (idx, letra) => { respostasAluno[idx] = letra; window.irParaQuestao(idx); };
 
     window.finalizarAtividade = async () => {
+        if (!confirm("Deseja finalizar e enviar suas respostas?")) return;
         if (intervaloCronometro) clearInterval(intervaloCronometro);
         const tempoFinal = Math.floor((Date.now() - tempoInicio) / 1000);
         let acertos = 0;
@@ -227,19 +284,29 @@ window.Router.register('gramaticaalunoclm', async () => {
     return `
     <style>
         .gram-aluno-wrapper { padding: 12px; font-family: 'Inter', sans-serif; background: transparent; }
-        .card-premium-list { background:#fff; padding:12px; border-radius:10px; margin-bottom:8px; display:flex; align-items:center; border-left:4px solid #003058; box-shadow:0 1px 3px rgba(0,0,0,0.1); cursor:pointer; }
-        .card-premium-list.enviada { border-left-color: #10b981; }
-        .atv-titulo-list { margin:0; font-size:13px; color:#003058; font-weight:700; }
-        .atv-sub-list { font-size:10px; color:#94a3b8; margin-top:3px; }
+        .card-premium-list { background:#fff; padding:15px; border-radius:12px; margin-bottom:10px; display:flex; align-items:center; border-left:5px solid #003058; box-shadow:0 2px 5px rgba(0,0,0,0.05); cursor:pointer; }
+        .atv-titulo-list { margin:0; font-size:14px; color:#003058; font-weight:700; }
+        .atv-sub-list { font-size:11px; color:#64748b; margin-top:5px; }
         
-        .header-resolver-top { display:flex; justify-content:space-between; align-items:center; background:#003058; padding:10px; border-radius:10px; margin-bottom:10px; color:#fff; }
-        .header-resolver-titulo { font-size:13px; font-weight:700; }
-        .cronometro-box { font-size:12px; background:rgba(255,255,255,0.1); padding:4px 8px; border-radius:6px; }
+        .loader-container { display: flex; justify-content: center; padding: 40px; }
+        .spinner-modern { width: 40px; height: 40px; border: 4px solid #f1f5f9; border-top: 4px solid #003058; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 15px; }
+        .btn-pag { background: #fff; border: 1px solid #cbd5e1; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; color: #003058; display: flex; align-items: center; justify-content: center; }
+        .btn-pag:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pag-info { font-size: 13px; color: #003058; font-weight: 700; }
+
+        .header-resolver-top { display:flex; align-items:center; background:#003058; padding:10px 15px; border-radius:12px; margin-bottom:12px; color:#fff; gap:15px; }
+        .btn-voltar-topo { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
+        .btn-voltar-topo:hover { background: rgba(255,255,255,0.25); }
+        .header-resolver-titulo { font-size:14px; font-weight:700; flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cronometro-box { font-size:12px; background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:8px; font-weight: 700; }
         
         .box-enunciado-render { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:15px; margin-bottom:12px; }
         .texto-enunciado-render { color:#1e293b; font-weight:600; font-size:14px; line-height:1.5; white-space:pre-wrap; }
         
-        .container-questao-corpo.layout-com-foto { display:flex; gap:12px; }
+        .container-questao-corpo { display:flex; gap:12px; }
         .col-opcoes-questao { flex:1.2; width:100%; }
         .col-foto-questao { flex:0.8; }
         .img-questao-render { width:100%; max-height:220px; border-radius:8px; object-fit:contain; border:1px solid #e2e8f0; background:#fff; }
@@ -247,7 +314,7 @@ window.Router.register('gramaticaalunoclm', async () => {
         .opcoes-lista { display:flex; flex-direction:column; gap:8px; }
         .opcao-card { display:flex; align-items:center; padding:12px; background:#fff; border:2px solid #f1f5f9; border-radius:10px; cursor:pointer; font-size:13px; }
         .opcao-card.selected { border-color:#003058; background:#f0f7ff; }
-        .opcao-card.correta-view { border-color:#10b981; background:#ecfdf5; }
+        .opcao-card.correta-view { border-color:#003058; background:#f0f7ff; }
         .opcao-card.errada-view { border-color:#ef4444; background:#fef2f2; }
         .letra-indicador { font-weight:900; background:#f1f5f9; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:11px; color:#003058; border:1px solid #e2e8f0; flex-shrink:0; }
 
@@ -255,54 +322,54 @@ window.Router.register('gramaticaalunoclm', async () => {
         .g-btn-pill { min-width:34px; height:34px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; font-weight:700; cursor:pointer; }
         .g-btn-pill.active { background:#003058; color:#fff; }
         .g-btn-pill.respondida:not(.active) { background:#e2e8f0; }
-        .btn-olho-texto-nav { background: #f1f5f9; color: #003058; border-color: #cbd5e1; font-size: 14px; }
 
-        .container-navegacao-setas { display: flex; justify-content: center; align-items: center; gap: 40px; margin-top: 20px; }
-        .btn-seta-nav { background: #fff; border: 1px solid #e2e8f0; width: 45px; height: 45px; border-radius: 50%; color: #003058; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); transition: all 0.2s; }
+        .container-navegacao-setas { display: flex; justify-content: center; align-items: center; gap: 40px; margin-top: 15px; }
+        .btn-seta-nav { background: #fff; border: 1px solid #e2e8f0; width: 45px; height: 45px; border-radius: 50%; color: #003058; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         .btn-seta-nav:disabled { opacity: 0.3; cursor: not-allowed; }
-        .btn-seta-nav:not(:disabled):hover { background: #f8fafc; transform: translateY(-2px); }
 
-        .container-acoes-rodape { display:flex; gap:10px; margin-top:10px; justify-content: flex-end; }
-        .btn-acao-enviar { width: 25%; background:#003058; color:#fff; border:none; height:44px; border-radius:10px; font-weight:700; cursor:pointer; }
+        .container-acoes-rodape { display:flex; justify-content:flex-end; margin-top:15px; }
+        .btn-acao-enviar { background:#003058; color:#fff; border:none; height:46px; border-radius:12px; font-weight:700; cursor:pointer; padding: 0 25px; box-shadow: 0 4px 6px rgba(0,48,88,0.2); }
 
         .modal-aluno { position:fixed; inset:0; background:rgba(0,48,88,0.4); backdrop-filter: blur(6px); display:none; align-items:center; justify-content:center; padding:20px; z-index:9999; }
-        .modal-content-aluno { background:#fff; width:100%; max-width:380px; border-radius:24px; padding:30px; text-align:center; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
-        .modal-icon-alert { width:60px; height:60px; background:#f0f7ff; color:#003058; border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 15px; font-size:24px; }
-        
+        .modal-content-aluno { background:#fff; width:100%; max-width:380px; border-radius:24px; padding:30px; text-align:center; }
         .tab-btn-aluno { padding:10px 15px; border:none; background:none; font-weight:700; color:#94a3b8; cursor:pointer; }
         .tab-btn-aluno.active { color:#003058; border-bottom:3px solid #003058; }
-        .nota-badge-circular { width:30px; height:30px; border-radius:50%; background:#003058; color:#fff; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:900; }
-        .btn-olho-revisao { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 8px; color: #64748b; cursor: pointer; }
+        .nota-badge-circular { width:32px; height:32px; border-radius:50%; background:#003058; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
+        .btn-olho-revisao { background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 10px; color: #003058; cursor: pointer; }
 
-        .img-texto-pequena-central { display: block; margin: 0 auto 15px; max-width: 150px; border-radius: 8px; border: 1px solid #e2e8f0; }
-
-        @media (max-width: 600px) { .container-questao-corpo.layout-com-foto { flex-direction: column-reverse; } .img-questao-render { max-height: 180px; } .btn-acao-enviar { width: 50%; } }
+        @media (max-width: 600px) { 
+            .container-questao-corpo.layout-com-foto { flex-direction: column-reverse; } 
+            .btn-acao-enviar { width: 100%; }
+        }
+        
+        .img-texto-pequena-central { display: none; }
+        #m-texto-img img { max-width: 150px !important; height: auto; }
+        
     </style>
 
     <div class="gram-aluno-wrapper">
         <div id="modal-aviso-cronometro" class="modal-aluno">
             <div class="modal-content-aluno">
-                <div class="modal-icon-alert"><i class="fa-solid fa-stopwatch"></i></div>
+                <div style="font-size:35px; color:#003058; margin-bottom:15px;"><i class="fa-solid fa-stopwatch"></i></div>
                 <h2 style="color:#003058; font-size:20px; margin-bottom:10px; font-weight:800;">Tudo pronto?</h2>
-                <p style="color:#64748b; font-size:14px; margin-bottom:25px; line-height:1.5;">Ao iniciar, seu tempo de resolução começará a ser contado.</p>
-                <button class="btn-acao-enviar" style="width:100%; height:50px; font-size:14px;" onclick="window.começarDeVez()">INICIAR ATIVIDADE</button>
+                <p style="color:#64748b; font-size:14px; margin-bottom:25px; line-height:1.5;">Ao iniciar, seu tempo de resolução será contabilizado para o professor.</p>
+                <button class="btn-acao-enviar" style="width:100%;" onclick="window.começarDeVez()">INICIAR ATIVIDADE</button>
                 <button onclick="document.getElementById('modal-aviso-cronometro').style.display='none'" style="background:none; border:none; color:#94a3b8; margin-top:15px; font-weight:600; cursor:pointer;">Agora não</button>
             </div>
         </div>
 
         <div id="modal-texto-aluno" class="modal-aluno" onclick="if(event.target===this) window.fecharTextoAtividade()">
-            <div class="modal-content-aluno" style="max-height:85vh; overflow-y:auto; text-align:left; max-width:500px;">
+            <div class="modal-content-aluno" style="max-height:85vh; overflow-y:auto; text-align:left; max-width:550px;">
                 <h3 id="m-texto-titulo" style="color:#003058; margin-bottom:15px; text-align: center;"></h3>
                 <div id="m-texto-img"></div>
                 <div id="m-texto-body" style="font-size:14px; line-height:1.6; color:#475569; white-space:pre-wrap;"></div>
-                <button class="btn-acao-enviar" style="width:100%; margin-top:20px; background:#f1f5f9; color:#003058; border: 1px solid #cbd5e1;" onclick="window.fecharTextoAtividade()">VOLTAR À QUESTÃO</button>
+                <button class="btn-acao-enviar" style="width:100%; margin-top:20px; background:#f1f5f9; color:#003058; border: 1px solid #cbd5e1; box-shadow:none;" onclick="window.fecharTextoAtividade()">VOLTAR À QUESTÃO</button>
             </div>
         </div>
 
         <div id="main-view-aluno">
             <h1 style="color:#003058; font-size:24px; font-weight:900; margin-bottom: 2px;">Gramática</h1>
-            <p style="color:#94a3b8; font-size:14px; margin-bottom: 20px; font-weight: 500;">Pratique seus conhecimentos gramaticais</p>
-            
+            <p style="color:#94a3b8; font-size:14px; margin-bottom: 20px;">Pratique seus conhecimentos gramaticais</p>
             <div style="display:flex; border-bottom:1px solid #e2e8f0; margin-bottom:15px;">
                 <button id="btn-tab-recebidas" class="tab-btn-aluno" onclick="window.switchTabAluno('recebidas')">Recebidas</button>
                 <button id="btn-tab-enviadas" class="tab-btn-aluno" onclick="window.switchTabAluno('enviadas')">Enviadas</button>
@@ -313,6 +380,7 @@ window.Router.register('gramaticaalunoclm', async () => {
 
         <div id="view-resolver" style="display:none;">
             <div class="header-resolver-top">
+                <button class="btn-voltar-topo" onclick="window.voltarParaLista()"><i class="fa-solid fa-arrow-left"></i></button>
                 <div id="header-atv-titulo" class="header-resolver-titulo"></div>
                 <div class="cronometro-box" id="cronometro-container"><span id="tempo-cronometro">00:00</span></div>
             </div>
