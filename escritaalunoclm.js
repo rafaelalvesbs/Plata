@@ -217,7 +217,7 @@ window.Router.register('escritaalunoclm', async () => {
             textarea.oninput = () => {
     const larguraJanela = window.innerWidth;
     // Ajuste fino: 42 caracteres para o novo tamanho mobile, 78 para desktop
-    const caracteresPorLinha = larguraJanela < 600 ? 58 : 78;
+    const caracteresPorLinha = larguraJanela < 600 ? 65 : 78;
     let conteudo = textarea.value;
     let linhasCalculadas = [];
     let parágrafos = conteudo.split('\n');
@@ -440,13 +440,13 @@ window.Router.register('escritaalunoclm', async () => {
     #tab-escrever, #tab-recebidas, #tab-enviadas { width: 100%; max-width: none; margin: 0; animation: fadeIn 0.4s ease; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* 3. TEMA E PROPOSTA (CARD DE TOPO) */
+    /* 3. TEMA E PROPOSTA */
     #tema-dinamico { flex:1; font-size:14px; color:#475569; white-space:pre-wrap; overflow-wrap: break-word; line-height: 1.5; }
     .layout-proposta-flex { display: flex; flex-direction: column; gap: 15px; margin-top: 10px; }
     #container-img-apoio { width: 100%; display: none; }
     #img-apoio-dinamica { width: 100%; max-height: 300px; object-fit: contain; border-radius: 8px; }
 
-    /* 4. A FOLHA DE REDAÇÃO - PADRÃO (DESKTOP) */
+    /* 4. A FOLHA DE REDAÇÃO - DESKTOP */
     .folha-caderno { 
         background: #fff; 
         border-radius: 4px; 
@@ -456,13 +456,14 @@ window.Router.register('escritaalunoclm', async () => {
         max-width: 800px; 
         margin: 0 auto; 
         position: relative;
-        overflow: hidden;
+        overflow-x: auto; /* IMPORTANTE para a largura extra no mobile */
+        overflow-y: hidden;
         height: 835px; 
         display: flex;
         flex-direction: column;
     } 
 
-    .linha-pautada { position: relative; flex: 1; background-color: #fff; overflow: hidden; }
+    .linha-pautada { position: relative; flex: 1; background-color: #fff; }
 
     .scroll-content {
         position: relative;
@@ -476,13 +477,13 @@ window.Router.register('escritaalunoclm', async () => {
 
     /* 5. NÚMEROS DAS LINHAS */
     .margem-numerica { 
-        position: absolute; 
+        position: sticky; /* Mantém visível ao rolar horizontalmente */
         left: 0; 
         top: 0; 
         width: 45px; 
         height: 100%;
         background: #fff;
-        z-index: 2;
+        z-index: 10;
         border-right: 1px solid #fca5a5;
         display: flex;
         flex-direction: column;
@@ -496,9 +497,7 @@ window.Router.register('escritaalunoclm', async () => {
         font-size: 11px;
     }
 
-    .margem-vermelha { position: absolute; left: 55px; top: 0; bottom: 0; width: 1px; background: #fca5a5; opacity: 0.5; z-index: 1; }
-
-    /* 6. ÁREA DE TEXTO */
+    /* 6. ÁREA DE TEXTO DESKTOP */
     #texto-redacao { 
         width: 100%; 
         height: 100%;
@@ -509,108 +508,32 @@ window.Router.register('escritaalunoclm', async () => {
         font-family: 'Kalam', cursive; 
         font-size: 19px; 
         color: #2c3e50; 
-        padding: 4px 15px 0 15px; 
-        line-height: 32px; 
+        padding: 5px 15px 0 15px; /* Ajuste fino de padding-top */
+        line-height: 32px !important; 
         display: block; 
         box-sizing: border-box; 
-        overflow-y: auto;
-        overflow-x: hidden;
+        overflow: hidden;
         white-space: pre-wrap !important;
         word-wrap: break-word !important;
-        overflow-wrap: break-word !important;
     }
-
-    #texto-redacao::-webkit-scrollbar { height: 8px; }
-    #texto-redacao::-webkit-scrollbar-track { background: #f1f1f1; }
-    #texto-redacao::-webkit-scrollbar-thumb { background: #003058; border-radius: 4px; }
-    #texto-redacao::-webkit-scrollbar-thumb:hover { background: #004075; }
 
     /* 7. BOTÕES */
-    .btn-enviar-final {
-        width: 100%; 
-        margin: 20px auto; 
-        display: block; 
-        background: #003058; 
-        color: white; 
-        padding: 18px; 
-        border: none; 
-        border-radius: 12px; 
-        font-weight: 800; 
-        cursor: pointer;
-        transition: 0.3s;
-    }
+    .btn-enviar-final { width: 100%; margin: 20px auto; display: block; background: #003058; color: white; padding: 18px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; }
 
-    .btn-acao-card {
-        background: #003058;
-        color: white;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 12px;
-        cursor: pointer;
-        transition: 0.3s;
-        text-transform: uppercase;
-        white-space: nowrap;
-    }
-
-    .btn-enviar-final:hover, .btn-acao-card:hover { background: #004075; transform: translateY(-1px); }
-    .btn-enviar-final:active, .btn-acao-card:active { transform: translateY(0); }
-
-    /* 8. CARDS DE LISTAGEM */
-    .card-aluno-atv { 
-        background: white; 
-        padding: 16px; 
-        border-radius: 16px; 
-        border: 1px solid #edf2f7; 
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        gap: 15px; 
-        margin-bottom: 12px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    /* 9. RESPONSIVIDADE (MOBILE LARGURA +40%) */
+    /* 9. RESPONSIVIDADE - MOBILE (LARGURA +40%) */
     @media (max-width: 600px) {
         .folha-caderno { 
-            height: 571px !important;
+            height: 571px !important; 
             border-radius: 0;
-            border-left: none;
-            border-right: none;
-            overflow-x: auto !important; /* Permite rolagem horizontal da folha */
-            overflow-y: hidden !important;
         }
 
         .linha-pautada {
+            width: 140% !important; /* FOLHA 40% MAIS LARGA */
             height: 100% !important;
-            width: 140% !important; /* LARGURA AUMENTADA EM 40% */
-            display: block !important;
         }
 
         .scroll-content {
-            width: 100% !important;
-            height: 100% !important;
             background-size: 100% 21.44px !important;
-            padding-left: 55px;
-        }
-
-        #texto-redacao {
-            width: 100% !important;
-            height: 100% !important;
-            font-size: 14px !important;
-            line-height: 21.44px !important;
-            padding: 1px 15px 0 15px !important;
-            overflow-y: hidden !important;
-            overflow-x: hidden !important;
-        }
-
-        .margem-numerica {
-            width: 45px !important;
-            height: 100% !important;
-            z-index: 10 !important;
-            position: sticky !important; /* Mantém os números visíveis ao rolar pro lado */
-            left: 0 !important;
         }
 
         .margem-numerica div {
@@ -619,16 +542,11 @@ window.Router.register('escritaalunoclm', async () => {
             font-size: 10px !important;
         }
 
-        .card-aluno-atv { flex-direction: column; align-items: flex-start; }
-        .btn-acao-card { width: 100%; padding: 14px; }
-    }
-
-    @media (min-width: 768px) {
-        .layout-proposta-flex { flex-direction: row; align-items: flex-start; }
-        #container-img-apoio { flex: 0 0 180px; order: 2; display: block; }
-        #tema-dinamico { order: 1; }
-        .btn-enviar-final { max-width: 800px; }
-        .card-topo-proposta { max-width: 800px; margin: 0 auto 20px auto !important; }
+        #texto-redacao {
+            font-size: 14px !important;
+            line-height: 21.44px !important;
+            padding: 2px 15px 0 15px !important;
+        }
     }
 </style>
 
