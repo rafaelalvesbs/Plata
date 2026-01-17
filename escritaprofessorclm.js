@@ -137,7 +137,7 @@ window.Router.register('escritaprofessorclm', async () => {
             tipo: "escrita",
             titulo: tInput.value.trim(),
             conteudo: aInput.value.trim(),
-            prazo: pInput.value,
+            prazo: pInput.value + "T23:59:59",
             semestre: semestreNome,
             // O aluno só enxerga se este campo abaixo existir e for um Array []
             turmasSelecionadas: [senhaTurma], 
@@ -204,7 +204,7 @@ window.Router.register('escritaprofessorclm', async () => {
                     <div style="flex:1; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding-right: 5px; min-width: 0;">
                         <span class="tag-turma-simple" style="font-size: 9px; padding: 2px 6px; background: #003058; color: white; border-radius: 4px;">${data.semestre || 'Geral'}</span>
                         <h3 style="margin: 2px 0; color:#003058; font-size:13px; display: inline-block; margin-left: 8px;">${data.titulo || data.conteudo}</h3>
-                        <div style="font-size: 10px; color:#94a3b8; margin-top: 2px;">Data: ${dataEx} | Prazo: ${new Date(data.prazo).toLocaleDateString('pt-BR')}</div>
+                        <div style="font-size: 10px; color:#94a3b8; margin-top: 2px;">Data: ${dataEx} | Prazo: ${new Date(data.prazo.includes('T') ? data.prazo : data.prazo + "T23:59:59").toLocaleDateString('pt-BR')}</div>
                     </div>
                     <div style="display:flex; gap:5px;">
                     <button onclick="window.visualizarProposta('${data.id}')" style="background:#003058; color:white; border:none; border-radius:6px; padding:6px 10px; cursor:pointer;">
@@ -397,26 +397,30 @@ window.verAlunosDaTurma = async (codTurma, nomeTurma) => {
             recebidasCache.push({ id: d.id, ...data });
         });
 
-        grid.innerHTML = `
-            <div style="width:100%; margin-bottom:15px;">
-                <button onclick="window.carregarTodasRedacoesRecebidas()" style="background:#f1f5f9; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:700; color:#003058;">
-                    <i class="fa-solid fa-chevron-left"></i> VOLTAR PARA TURMAS
-                </button>
-                <h2 style="margin:15px 0; font-size:18px; color:#003058;">Redações da turma: ${nomeTurma}</h2>
-            </div>
-            <div id="lista-alunos-container"></div>`;
-            
-        window.renderizarListaRecebidasInterna();
+        paginaAtualRecebidas = 1; // Resetar para a primeira página ao abrir a turma
+        window.renderizarListaRecebidasInterna(nomeTurma);
     } catch(e) {
         alert("Erro ao carregar alunos desta turma.");
     }
 };
 
-window.renderizarListaRecebidasInterna = () => {
+window.renderizarListaRecebidasInterna = (nomeTurma) => {
     const container = document.getElementById('grid-turmas-escrita');
-    let htmlLista = container.innerHTML;
+    const itensPorPaginaAlunos = 5;
+    const totalPaginas = Math.ceil(recebidasCache.length / itensPorPaginaAlunos);
+    const inicio = (paginaAtualRecebidas - 1) * itensPorPaginaAlunos;
+    const itensPagina = recebidasCache.slice(inicio, inicio + itensPorPaginaAlunos);
 
-    recebidasCache.forEach(red => {
+    let htmlCabecalho = `
+        <div style="width:100%; margin-bottom:15px;">
+            <button onclick="window.carregarTodasRedacoesRecebidas()" style="background:#f1f5f9; border:none; padding:8px 15px; border-radius:8px; cursor:pointer; font-weight:700; color:#003058;">
+                <i class="fa-solid fa-chevron-left"></i> VOLTAR PARA TURMAS
+            </button>
+            <h2 style="margin:15px 0; font-size:18px; color:#003058;">Redações da turma: ${nomeTurma}</h2>
+        </div>`;
+
+    let htmlLista = '';
+    itensPagina.forEach(red => {
         const textoSeguro = (red.texto || '').replace(/`/g, "'").replace(/\$/g, "\\$");
         const dataEx = red.timestamp?.toDate ? red.timestamp.toDate().toLocaleDateString('pt-BR') : '---';
         
@@ -432,7 +436,23 @@ window.renderizarListaRecebidasInterna = () => {
                 </button>
             </div>`;
     });
-    container.innerHTML = htmlLista;
+
+    let htmlPaginacao = '';
+    if (totalPaginas > 1) {
+        htmlPaginacao = `
+            <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-top: 20px;">
+                <button onclick="window.mudarPaginaRecebidasInterna(-1, '${nomeTurma}')" ${paginaAtualRecebidas === 1 ? 'disabled style="opacity:0.3"' : ''} style="background:none; border:none; color:#003058; font-size: 22px; cursor:pointer;"><i class="fa-solid fa-circle-arrow-left"></i></button>
+                <span style="font-weight:700; color:#003058;">${paginaAtualRecebidas} de ${totalPaginas}</span>
+                <button onclick="window.mudarPaginaRecebidasInterna(1, '${nomeTurma}')" ${paginaAtualRecebidas === totalPaginas ? 'disabled style="opacity:0.3"' : ''} style="background:none; border:none; color:#003058; font-size: 22px; cursor:pointer;"><i class="fa-solid fa-circle-arrow-right"></i></button>
+            </div>`;
+    }
+
+    container.innerHTML = htmlCabecalho + htmlLista + htmlPaginacao;
+};
+
+window.mudarPaginaRecebidasInterna = (dir, nomeTurma) => {
+    paginaAtualRecebidas += dir;
+    window.renderizarListaRecebidasInterna(nomeTurma);
 };
 
 window.renderizarListaRecebidas = () => {
