@@ -1,423 +1,291 @@
-window.Router.register('gramaticaalunoclm', async () => {
+window.Router.register('homealunoclm', async () => {
     const db = window.db;
-    const { collection, getDocs, query, where, addDoc, serverTimestamp, getDoc, doc } = window.fsMethods;
-    const auth = window.authMethods.getAuth();
+    const { doc, getDoc, collection, query, where, onSnapshot, getDocs } = window.fsMethods;
+    const azulPadrao = "#003058";
+    const verdeAlerta = "#22c55e";
 
-    let atividadesRecebidas = [];
-    let atividadesEnviadas = [];
-    let atividadeSelecionada = null;
-    let respostasAluno = {};
-    let dadosTurmaAluno = null;
-    let modoVisualizacao = false;
-    let tempoInicio = null;
-    let intervaloCronometro = null;
-    let questaoAtualIndex = 0;
-
-    let paginaAtualRecebidas = 1;
-    let paginaAtualEnviadas = 1;
-    const itensPorPagina = 6;
-
-    const bloquearAcoes = (e) => { e.preventDefault(); return false; };
-    document.addEventListener('copy', bloquearAcoes);
-    document.addEventListener('paste', bloquearAcoes);
-    document.addEventListener('contextmenu', bloquearAcoes);
-    document.addEventListener('selectstart', bloquearAcoes);
-    document.addEventListener('dragstart', bloquearAcoes);
-    document.addEventListener('keydown', (e) => {
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'c' || e.key === 'v' || e.key === 'a' || e.key === 'p')) e.preventDefault();
-    });
-
-    const buscarDadosContexto = async () => {
-        const userRef = auth.currentUser;
-        if (!userRef) return;
+    // GARANTIR VARIÁVEIS NO WINDOW
+    if (typeof window.countEscrita === 'undefined') window.countEscrita = null;
+    if (typeof window.countOral === 'undefined') window.countOral = null;
+    if (typeof window.countGramatica === 'undefined') window.countGramatica = null;
+    if (typeof window.countAuditiva === 'undefined') window.countAuditiva = null;
+    if (typeof window.avisoCount === 'undefined') window.avisoCount = null;
+    if (typeof window.msgCount === 'undefined') window.msgCount = null;
+    if (typeof window.feedbackCount === 'undefined') window.feedbackCount = null;
+    
+    const carregarDadosHomeAluno = async () => {
         try {
-            const alunoDoc = await getDoc(doc(db, "usuarios", userRef.uid));
-            if (alunoDoc.exists()) {
-                const dadosUser = alunoDoc.data();
-                const qTurma = query(collection(db, "turmas"), where("senha", "==", dadosUser.turma));
-                const snapTurma = await getDocs(qTurma);
-                if (!snapTurma.empty) {
-                    const dadosT = snapTurma.docs[0].data();
-                    dadosTurmaAluno = { alunoId: userRef.uid, semestre: dadosT.semestre };
-                    window.switchTabAluno('recebidas');
-                }
+            const auth = window.authMethods.getAuth();
+            const user = auth.currentUser;
+            if (!user) return;
+
+            // Busca dados do aluno para obter Turma e Semestre
+            const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+            if (!userDoc.exists()) return;
+            const dadosUsuario = userDoc.data();
+            const turmaAluno = dadosUsuario.turma;
+            
+            // Busca o semestre da turma para filtrar Auditivas/Orais
+            const qTurma = query(collection(db, "turmas"), where("senha", "==", turmaAluno));
+            const snapTurma = await getDocs(qTurma);
+            const semestreAluno = !snapTurma.empty ? snapTurma.docs[0].data().semestre : "";
+
+            const nomes = (dadosUsuario.nome || "").split(" ");
+            const nomeExibicao = nomes.slice(0, 2).join(" ");
+            
+            const elBoasVindas = document.getElementById('boas-vindas-aluno');
+            if (elBoasVindas) {
+                elBoasVindas.innerHTML = `Olá, ${nomeExibicao}!<br><small style="font-size: 1rem; color: #64748b; font-weight: 400;">Bons estudos hoje!</small>`;
             }
-        } catch (e) { console.error("Erro ao carregar perfil:", e); }
+
+            // LÓGICA DE PERSISTÊNCIA DO ALERTA
+            const verificarAlertaPersistent = (cardId, totalAtual) => {
+                const storageKey = `visto_${cardId}_${user.uid}`;
+                const ultimoVisto = parseInt(localStorage.getItem(storageKey) || "0");
+                const cardEl = document.getElementById(cardId);
+                
+                if (cardEl) {
+                    if (totalAtual > ultimoVisto) {
+                        cardEl.classList.add('blink-alerta');
+                    } else {
+                        cardEl.classList.remove('blink-alerta');
+                    }
+                }
+            };
+
+            // CALENDÁRIO
+            const buscarEventoMaisProximo = () => {
+                const key = `eventos_cal_${user.uid}`;
+                const eventos = JSON.parse(localStorage.getItem(key) || '[]');
+                const hoje = new Date().setHours(0,0,0,0);
+                const futuros = eventos
+                    .filter(e => new Date(e.data + 'T00:00:00') >= hoje)
+                    .sort((a, b) => new Date(a.data + 'T00:00:00') - new Date(b.data + 'T00:00:00'));
+
+                const elTitulo = document.getElementById('prox-evento-titulo');
+                const elData = document.getElementById('prox-evento-data');
+
+                if (futuros.length > 0 && elTitulo) {
+                    const prox = futuros[0];
+                    const [ano, mes, dia] = prox.data.split('-');
+                    elTitulo.innerText = prox.titulo;
+                    elData.innerText = `${dia}/${mes}/${ano}`;
+                } else if (elTitulo) {
+                    elTitulo.innerText = "Nenhum evento";
+                    elData.innerText = "Agende no calendário";
+                }
+            };
+            buscarEventoMaisProximo();
+
+            // MONITORAMENTO DE ESCRITA
+            const monitorarEscritaSincronizada = () => {
+                const qAtv = query(collection(db, "atividades_enviadas"), where("tipo", "==", "escrita"), where("turmasSelecionadas", "array-contains", turmaAluno));
+                onSnapshot(qAtv, async (snapAtv) => {
+                    const qResolvidas = query(collection(db, "redacoes"), where("alunoId", "==", user.uid));
+                    const resolvidasSnap = await getDocs(qResolvidas);
+                    const idsFeitos = new Set();
+                    resolvidasSnap.forEach(d => idsFeitos.add(d.data().atividadeId));
+                    let pendentes = 0;
+                    snapAtv.forEach(docAtv => { if (!idsFeitos.has(docAtv.id)) pendentes++; });
+                    const el = document.getElementById('count-escrita');
+                    if (el) el.innerText = pendentes;
+                    window.countEscrita = pendentes;
+                    verificarAlertaPersistent('card-escrita', pendentes);
+                });
+            };
+            monitorarEscritaSincronizada();
+
+            // MONITORAMENTO DE AUDITIVA, ORAL E GRAMÁTICA (Sincronizado com Semestre)
+            const monitorarPendentesSinc = (tipo, elId, cardId, globalVar) => {
+                // Filtra pelo semestre e tipo conforme sua nova estrutura
+                const qAtv = query(collection(db, "atividades_enviadas"), where("tipo", "==", tipo), where("semestre", "==", semestreAluno));
+                
+                onSnapshot(qAtv, async (snapAtv) => {
+                    // Busca respostas enviadas pelo aluno nesta categoria
+                    const qResp = query(collection(db, "respostas_alunos"), where("alunoId", "==", user.uid));
+                    const snapResp = await getDocs(qResp);
+                    const respondidasIds = snapResp.docs.map(d => d.data().atividadeId);
+                    
+                    let pendentes = 0;
+                    snapAtv.forEach(docAtv => {
+                        if (!respondidasIds.includes(docAtv.id)) {
+                            pendentes++;
+                        }
+                    });
+
+                    const el = document.getElementById(elId);
+                    if (el) el.innerText = pendentes;
+                    window[globalVar] = pendentes;
+                    verificarAlertaPersistent(cardId, pendentes);
+                });
+            };
+
+            monitorarPendentesSinc("oral", "count-oral", "card-oral", "countOral");
+            monitorarPendentesSinc("gramatica", "count-gramatica", "card-gramatica", "countGramatica");
+            monitorarPendentesSinc("auditiva", "count-auditiva", "card-auditiva", "countAuditiva");
+
+            // FEEDBACKS E RESOLVIDAS
+            onSnapshot(query(collection(db, "redacoes"), where("alunoId", "==", user.uid)), (snap) => {
+                const elCountFeedback = document.getElementById('card-feedback-count');
+                const elCountResolvidas = document.getElementById('card-resolvidas-count');
+                const feedbacksValidos = snap.docs.filter(d => {
+                    const data = d.data();
+                    return data.status === 'corrigida' || data.feedbackProfessor || data.feedbackGeral;
+                }).length;
+                const totalResolvidas = snap.size;
+                if (elCountFeedback) elCountFeedback.innerText = feedbacksValidos;
+                if (elCountResolvidas) elCountResolvidas.innerText = totalResolvidas;
+                window.feedbackCount = feedbacksValidos;
+                verificarAlertaPersistent('card-feedback', feedbacksValidos);
+            });
+
+            // AVISOS
+            onSnapshot(collection(db, "avisos"), (snap) => {
+                const total = snap.size; 
+                const el = document.getElementById('card-avisos-count');
+                if (el) el.innerText = total;
+                window.avisoCount = total;
+                verificarAlertaPersistent('card-avisos', total);
+            });
+
+            // MENSAGENS RECEBIDAS
+            onSnapshot(query(collection(db, "mensagens_diretas"), where("destinatarioId", "==", user.uid)), (snap) => {
+                const total = snap.size;
+                const el = document.getElementById('card-msg-count');
+                if (el) el.innerText = total;
+                window.msgCount = total;
+                verificarAlertaPersistent('card-msg', total);
+            });
+
+            // MENSAGENS ENVIADAS
+            onSnapshot(query(collection(db, "mensagens_diretas"), where("remetenteId", "==", user.uid)), (snap) => {
+                const totalEnviadas = snap.size;
+                const elEnviadas = document.getElementById('card-enviadas-count');
+                if (elEnviadas) elEnviadas.innerText = totalEnviadas;
+            });
+
+        } catch (e) { console.error(e); }
     };
 
-    window.confirmarAcao = (mensagem, callback) => {
-        const modal = document.getElementById('modal-confirmacao-moderno');
-        document.getElementById('confirm-msg').innerText = mensagem;
-        modal.style.display = 'flex';
-        window.confirmCallback = () => {
-            modal.style.display = 'none';
-            callback();
-        };
-    };
-
-    window.voltarParaLista = () => {
-        if (modoVisualizacao) {
-            executarSaida();
+    // FUNÇÕES DE CLIQUE
+    window.acaoAtividadeTipo = (cardId, tipo) => {
+        const total = document.getElementById(`count-${tipo}`)?.innerText || "0";
+        const user = window.authMethods.getAuth().currentUser;
+        localStorage.setItem(`visto_${cardId}_${user.uid}`, total);
+        document.getElementById(cardId)?.classList.remove('blink-alerta');
+        
+        if(tipo === 'gramatica') {
+            window.location.hash = '#gramaticaalunoclm';
+        } else if(tipo === 'auditiva') {
+            window.location.hash = '#auditivaalunoclm';
+        } else if(tipo === 'oral') {
+            window.location.hash = '#oralalunoclm';
         } else {
-            window.confirmarAcao("Deseja realmente sair? Seu progresso nesta tentativa será perdido.", executarSaida);
+            window.location.hash = `#atividadesclm?tipo=${tipo}`; 
         }
     };
 
-    const executarSaida = () => {
-        if (intervaloCronometro) clearInterval(intervaloCronometro);
-        document.getElementById('view-resolver').style.display = 'none';
-        document.getElementById('main-view-aluno').style.display = 'block';
-        if (modoVisualizacao) carregarEnviadas(); else carregarRecebidas();
+    window.acaoEscrita = () => {
+        const total = document.getElementById('count-escrita')?.innerText || "0";
+        const user = window.authMethods.getAuth().currentUser;
+        localStorage.setItem(`visto_card-escrita_${user.uid}`, total);
+        document.getElementById('card-escrita')?.classList.remove('blink-alerta');
+        window.location.hash = '#escritaalunoclm';
     };
 
-    window.switchTabAluno = async (tab) => {
-        document.querySelectorAll('.tab-btn-aluno').forEach(b => b.classList.remove('active'));
-        document.getElementById(`btn-tab-${tab}`).classList.add('active');
-        document.getElementById('pane-recebidas').style.display = tab === 'recebidas' ? 'block' : 'none';
-        document.getElementById('pane-enviadas').style.display = tab === 'enviadas' ? 'block' : 'none';
-        if (tab === 'recebidas') carregarRecebidas();
-        else carregarEnviadas();
+    window.acaoAvisos = () => {
+        const total = document.getElementById('card-avisos-count')?.innerText || "0";
+        const user = window.authMethods.getAuth().currentUser;
+        localStorage.setItem(`visto_card-avisos_${user.uid}`, total);
+        document.getElementById('card-avisos')?.classList.remove('blink-alerta');
+        window.location.hash = '#avisosclm';
     };
 
-    const renderizarPaginacao = (totalItens, paginaAtual, tab) => {
-        const totalPaginas = Math.ceil(totalItens / itensPorPagina);
-        if (totalPaginas <= 1) return '';
-        return `
-            <div class="pagination-container">
-                <button class="btn-pag" ${paginaAtual === 1 ? 'disabled' : ''} onclick="window.mudarPagina('${tab}', ${paginaAtual - 1})"><i class="fa-solid fa-angle-left"></i></button>
-                <span class="pag-info">${paginaAtual} / ${totalPaginas}</span>
-                <button class="btn-pag" ${paginaAtual === totalPaginas ? 'disabled' : ''} onclick="window.mudarPagina('${tab}', ${paginaAtual + 1})"><i class="fa-solid fa-angle-right"></i></button>
-            </div>`;
+    window.acaoMensagens = () => {
+        const total = document.getElementById('card-msg-count')?.innerText || "0";
+        const user = window.authMethods.getAuth().currentUser;
+        localStorage.setItem(`visto_card-msg_${user.uid}`, total);
+        document.getElementById('card-msg')?.classList.remove('blink-alerta');
+        window.location.hash = '#mensagensclm';
     };
 
-    window.mudarPagina = (tab, novaPagina) => {
-        if (tab === 'recebidas') { paginaAtualRecebidas = novaPagina; exibirCardsRecebidas(); } 
-        else { paginaAtualEnviadas = novaPagina; exibirCardsEnviadas(); }
+    window.acaoFeedbacks = () => {
+        const total = document.getElementById('card-feedback-count')?.innerText || "0";
+        const user = window.authMethods.getAuth().currentUser;
+        localStorage.setItem(`visto_card-feedback_${user.uid}`, total);
+        document.getElementById('card-feedback')?.classList.remove('blink-alerta');
+        window.location.hash = '#feedbackdoalunoclm';
     };
 
-    const carregarRecebidas = async () => {
-        const container = document.getElementById('lista-recebidas');
-        container.innerHTML = '<div class="loader-container"><div class="spinner-modern"></div></div>';
-        try {
-            const qAtv = query(collection(db, "atividades_enviadas"), where("semestre", "==", dadosTurmaAluno.semestre), where("tipo", "==", "gramatica"));
-            const snapAtv = await getDocs(qAtv);
-            const qResp = query(collection(db, "respostas_alunos"), where("alunoId", "==", dadosTurmaAluno.alunoId));
-            const snapResp = await getDocs(qResp);
-            const respondidasIds = snapResp.docs.map(d => d.data().atividadeId);
-            atividadesRecebidas = snapAtv.docs.map(d => ({ id: d.id, ...d.data() })).filter(atv => !respondidasIds.includes(atv.id));
-            exibirCardsRecebidas();
-        } catch (e) { container.innerHTML = '<div class="empty-state">Erro ao carregar.</div>'; }
-    };
-
-    const exibirCardsRecebidas = () => {
-        const container = document.getElementById('lista-recebidas');
-        const inicio = (paginaAtualRecebidas - 1) * itensPorPagina;
-        const fim = inicio + itensPorPagina;
-        const itensExibidos = atividadesRecebidas.slice(inicio, fim);
-        container.innerHTML = itensExibidos.length ? itensExibidos.map(atv => `
-            <div class="card-premium-list" onclick="window.confirmarInicioAtividade('${atv.id}')">
-                <div style="flex:1">
-                    <h3 class="atv-titulo-list">${atv.titulo || 'Atividade'}</h3>
-                    <div class="atv-sub-list">
-                        <span><i class="fa-solid fa-calendar-day"></i> Semestre: ${atv.semestre}</span>
-                    </div>
-                </div>
-                <i class="fa-solid fa-chevron-right" style="color:#003058"></i>
-            </div>`).join('') + renderizarPaginacao(atividadesRecebidas.length, paginaAtualRecebidas, 'recebidas') 
-            : '<div class="empty-state">Nenhuma atividade pendente.</div>';
-    };
-
-    const carregarEnviadas = async () => {
-        const container = document.getElementById('lista-enviadas');
-        container.innerHTML = '<div class="loader-container"><div class="spinner-modern"></div></div>';
-        try {
-            const q = query(collection(db, "respostas_alunos"), where("alunoId", "==", dadosTurmaAluno.alunoId));
-            const snap = await getDocs(q);
-            atividadesEnviadas = [];
-            for(let docSnap of snap.docs) {
-                const data = docSnap.data();
-                const refOrig = await getDoc(doc(db, "atividades_enviadas", data.atividadeId));
-                atividadesEnviadas.push({ ...data, idResp: docSnap.id, dadosOriginais: refOrig.exists() ? refOrig.data() : null });
-            }
-            exibirCardsEnviadas();
-        } catch (e) { container.innerHTML = '<div class="empty-state">Erro ao carregar histórico.</div>'; }
-    };
-
-    const exibirCardsEnviadas = () => {
-        const container = document.getElementById('lista-enviadas');
-        const inicio = (paginaAtualEnviadas - 1) * itensPorPagina;
-        const fim = inicio + itensPorPagina;
-        const itensExibidos = atividadesEnviadas.slice(inicio, fim);
-        container.innerHTML = itensExibidos.length ? itensExibidos.map(atv => {
-            const dataFmt = atv.dataEntrega ? new Date(atv.dataEntrega.seconds * 1000).toLocaleDateString('pt-BR') : '---';
-            return `
-            <div class="card-premium-list enviada">
-                <div style="flex:1">
-                    <h3 class="atv-titulo-list">${atv.titulo || 'Atividade'}</h3>
-                    <div class="atv-sub-list">
-                        <span><i class="fa-regular fa-calendar"></i> ${dataFmt}</span> | 
-                        <span><i class="fa-regular fa-clock"></i> ${window.formatarTempoExterno(atv.tempoGasto)}</span>
-                    </div>
-                </div>
-                <div style="display:flex; align-items:center; gap:10px;">
-                    <button class="btn-olho-revisao" onclick="window.revisarAtividade('${atv.idResp}')"><i class="fa-solid fa-eye"></i></button>
-                    <div class="nota-badge-circular">${atv.nota}</div>
-                </div>
-            </div>`;
-        }).join('') + renderizarPaginacao(atividadesEnviadas.length, paginaAtualEnviadas, 'enviadas')
-        : '<div class="empty-state">Sem histórico de atividades.</div>';
-    };
-
-    window.formatarTempoExterno = (segundosTotal) => {
-        const mins = Math.floor(segundosTotal / 60);
-        const segs = segundosTotal % 60;
-        return `${mins.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
-    };
-
-    const iniciarCronometroVisual = () => {
-        if (intervaloCronometro) clearInterval(intervaloCronometro);
-        const display = document.getElementById('tempo-cronometro');
-        intervaloCronometro = setInterval(() => {
-            const decorrido = Math.floor((Date.now() - tempoInicio) / 1000);
-            if(display) display.innerText = window.formatarTempoExterno(decorrido);
-        }, 1000);
-    };
-
-    window.confirmarInicioAtividade = (id) => {
-        atividadeSelecionada = atividadesRecebidas.find(a => a.id === id);
-        document.getElementById('modal-aviso-cronometro').style.display = 'flex';
-    };
-
-    window.começarDeVez = () => {
-        document.getElementById('modal-aviso-cronometro').style.display = 'none';
-        respostasAluno = {}; modoVisualizacao = false; tempoInicio = Date.now();
-        document.getElementById('main-view-aluno').style.display = 'none';
-        document.getElementById('view-resolver').style.display = 'block';
-        document.getElementById('header-atv-titulo').innerText = atividadeSelecionada.titulo;
-        document.getElementById('cronometro-container').style.display = 'block';
-        iniciarCronometroVisual();
-        window.irParaQuestao(0);
-    };
-
-    window.mostrarTextoAtividade = () => {
-        const modal = document.getElementById('modal-texto-aluno');
-        document.getElementById('m-texto-titulo').innerText = atividadeSelecionada.tituloTextoContexto || "Texto Base";
-        document.getElementById('m-texto-body').innerText = atividadeSelecionada.textoContexto || "";
-        const imgC = document.getElementById('m-texto-img');
-        if(atividadeSelecionada.fotoTextoContexto) {
-            imgC.innerHTML = `<img src="${atividadeSelecionada.fotoTextoContexto}" style="display: block; margin: 0 auto 15px auto; max-width: 150px; width: 100%; border-radius: 8px;">`;
-            imgC.style.display = 'block';
-        } else imgC.style.display = 'none';
-        modal.style.display = 'flex';
-    };
-
-    window.fecharTextoAtividade = () => document.getElementById('modal-texto-aluno').style.display = 'none';
-
-    window.irParaQuestao = (idx) => {
-        questaoAtualIndex = idx;
-        const q = atividadeSelecionada.questoes[idx];
-        let navHtml = `<button onclick="window.mostrarTextoAtividade()" class="g-btn-pill btn-olho-texto-nav"><i class="fa-solid fa-eye"></i></button>`;
-        navHtml += atividadeSelecionada.questoes.map((_, i) => `
-            <button onclick="window.irParaQuestao(${i})" class="g-btn-pill ${i === idx ? 'active' : ''} ${respostasAluno[i] ? 'respondida' : ''}">${i + 1}</button>
-        `).join('');
-        document.getElementById('nav-questoes').innerHTML = navHtml;
-
-        const midiaHtml = q.imagem ? `<div class="col-foto-questao"><img src="${q.imagem}" class="img-questao-render"></div>` : '';
-
-        document.getElementById('render-pergunta').innerHTML = `
-            <div class="box-enunciado-render">
-                <div class="texto-enunciado-render">${q.enunciado}</div>
-            </div>
-            <div class="container-questao-corpo ${q.imagem ? 'layout-com-foto' : 'layout-sem-foto'}">
-                <div class="col-opcoes-questao">
-                    <div class="opcoes-lista">
-                        ${['A', 'B', 'C'].map(letra => {
-                            let extra = '';
-                            if (modoVisualizacao) {
-                                if (letra === q.correta) extra = 'correta-view';
-                                if (respostasAluno[idx] === letra && letra !== q.correta) extra = 'errada-view';
-                            } else if (respostasAluno[idx] === letra) extra = 'selected';
-                            return `
-                                <div class="opcao-card ${extra}" onclick="${modoVisualizacao ? '' : `window.setResp(${idx}, '${letra}')`}">
-                                    <div class="letra-indicador">${letra}</div>
-                                    <div class="texto-opcao">${q.opcoes[letra]}</div>
-                                </div>`;
-                        }).join('')}
-                    </div>
-                </div>
-                ${midiaHtml}
-            </div>
-            
-            <div class="container-navegacao-setas">
-                <button class="btn-seta-nav" onclick="window.questaoAnterior()" ${idx === 0 ? 'disabled' : ''}>
-                    <i class="fa-solid fa-chevron-left"></i>
-                </button>
-                <button class="btn-seta-nav" onclick="window.proximaQuestao()" ${idx === atividadeSelecionada.questoes.length - 1 ? 'disabled' : ''}>
-                    <i class="fa-solid fa-chevron-right"></i>
-                </button>
-            </div>
-
-            <div class="container-acoes-rodape">
-                <div style="flex:1"></div>
-                ${!modoVisualizacao && idx === atividadeSelecionada.questoes.length - 1 ? `
-                    <button class="btn-acao-enviar" onclick="window.finalizarAtividade()">ENVIAR ATIVIDADE</button>
-                ` : ''}
-            </div>`;
-    };
-
-    window.questaoAnterior = () => { if(questaoAtualIndex > 0) window.irParaQuestao(questaoAtualIndex - 1); };
-    window.proximaQuestao = () => { if(questaoAtualIndex < atividadeSelecionada.questoes.length - 1) window.irParaQuestao(questaoAtualIndex + 1); };
-
-    window.revisarAtividade = (idResp) => {
-        const atv = atividadesEnviadas.find(a => a.idResp === idResp);
-        if(!atv || !atv.dadosOriginais) return;
-        atividadeSelecionada = atv.dadosOriginais; respostasAluno = atv.respostas; modoVisualizacao = true;
-        document.getElementById('main-view-aluno').style.display = 'none';
-        document.getElementById('view-resolver').style.display = 'block';
-        document.getElementById('header-atv-titulo').innerText = "Revisão";
-        document.getElementById('cronometro-container').style.display = 'none';
-        window.irParaQuestao(0);
-    };
-
-    window.setResp = (idx, letra) => { respostasAluno[idx] = letra; window.irParaQuestao(idx); };
-
-    window.finalizarAtividade = () => {
-        window.confirmarAcao("Deseja finalizar e enviar suas respostas?", enviarDadosFinais);
-    };
-
-    const enviarDadosFinais = async () => {
-        if (intervaloCronometro) clearInterval(intervaloCronometro);
-        const tempoFinal = Math.floor((Date.now() - tempoInicio) / 1000);
-        let acertos = 0;
-        atividadeSelecionada.questoes.forEach((q, i) => { if(respostasAluno[i] === q.correta) acertos++; });
-        const nota = ((acertos / atividadeSelecionada.questoes.length) * 10).toFixed(1);
-        await addDoc(collection(db, "respostas_alunos"), {
-            atividadeId: atividadeSelecionada.id, titulo: atividadeSelecionada.titulo,
-            alunoId: dadosTurmaAluno.alunoId, respostas: respostasAluno, nota: nota,
-            tempoGasto: tempoFinal, semestre: dadosTurmaAluno.semestre, dataEntrega: serverTimestamp()
-        });
-        location.reload();
-    };
-
-    setTimeout(buscarDadosContexto, 300);
+    setTimeout(carregarDadosHomeAluno, 200);
 
     return `
-    <style>
-        .gram-aluno-wrapper { padding: 12px; font-family: 'Inter', sans-serif; background: transparent; }
-        .card-premium-list { background:#fff; padding:15px; border-radius:12px; margin-bottom:10px; display:flex; align-items:center; border-left:5px solid #003058; box-shadow:0 2px 5px rgba(0,0,0,0.05); cursor:pointer; }
-        .atv-titulo-list { margin:0; font-size:14px; color:#003058; font-weight:700; }
-        .atv-sub-list { font-size:11px; color:#64748b; margin-top:5px; }
+        <style>
+            .grid-aluno { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; width: 100%; }
+            .card-aluno {
+                min-height: 120px; display: flex; flex-direction: column; justify-content: center; 
+                background: #fff; padding: 20px; border-radius: 12px; border-top: 5px solid ${azulPadrao};
+                box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; position: relative;
+            }
+            .card-aluno h3 { color: #64748b; font-size: 0.8rem; text-transform: uppercase; margin-bottom: 5px; font-weight: 700; }
+            .card-aluno .count { font-size: 2.5rem; font-weight: 800; color: ${azulPadrao}; }
+            .clickable { cursor: pointer; }
+            .clickable:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+            
+            .blink-alerta { 
+                animation: pulse-verde-aluno 1.5s infinite !important; 
+                border-top-color: ${verdeAlerta} !important; 
+                box-shadow: 0 0 15px rgba(34, 197, 94, 0.2) !important;
+            }
+            @keyframes pulse-verde-aluno {
+                0% { background-color: #ffffff; }
+                50% { background-color: #f0fdf4; }
+                100% { background-color: #ffffff; }
+            }
+        </style>
+
+        <div class="header-prof">
+            <h1 id="boas-vindas-aluno" style="text-transform: uppercase; color: ${azulPadrao};">Carregando...</h1>
+        </div>
+        <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eef2f6;">
         
-        .loader-container { display: flex; justify-content: center; padding: 40px; }
-        .spinner-modern { width: 40px; height: 40px; border: 4px solid #f1f5f9; border-top: 4px solid #003058; border-radius: 50%; animation: spin 0.8s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        <div class="grid-aluno">
+            <div class="card-aluno clickable" id="card-escrita" onclick="window.acaoEscrita()">
+                <h3>Escritas recebidas</h3><div id="count-escrita" class="count">0</div>
+            </div>
+            <div class="card-aluno clickable" id="card-oral" onclick="window.acaoAtividadeTipo('card-oral', 'oral')">
+                <h3>Orais recebidas</h3><div id="count-oral" class="count">0</div>
+            </div>
+            <div class="card-aluno clickable" id="card-gramatica" onclick="window.acaoAtividadeTipo('card-gramatica', 'gramatica')">
+                <h3>Gramáticas recebidas</h3><div id="count-gramatica" class="count">0</div>
+            </div>
+            <div class="card-aluno clickable" id="card-auditiva" onclick="window.acaoAtividadeTipo('card-auditiva', 'auditiva')">
+                <h3>Auditivas recebidas</h3><div id="count-auditiva" class="count">0</div>
+            </div>
 
-        .pagination-container { display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 15px; }
-        .btn-pag { background: #fff; border: 1px solid #cbd5e1; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; color: #003058; display: flex; align-items: center; justify-content: center; }
-        .btn-pag:disabled { opacity: 0.5; cursor: not-allowed; }
-        .pag-info { font-size: 13px; color: #003058; font-weight: 700; }
+            <div class="card-aluno">
+                <h3>Atividades Resolvidas</h3><div id="card-resolvidas-count" class="count">0</div>
+            </div>
+            <div class="card-aluno clickable" id="card-feedback" onclick="window.acaoFeedbacks()">
+                <h3>Feedbacks Recebidos</h3><div id="card-feedback-count" class="count">0</div>
+            </div>
+            
+            <div class="card-aluno clickable" id="card-enviadas" onclick="window.location.hash = '#mensagensclm'">
+                <h3>Mensagens Enviadas</h3><div id="card-enviadas-count" class="count">0</div>
+            </div>
+            
+            <div class="card-aluno clickable" id="card-msg" onclick="window.acaoMensagens()">
+                <h3>Mensagens Recebidas</h3><div id="card-msg-count" class="count">0</div>
+            </div>
 
-        .header-resolver-top { display:flex; align-items:center; background:#003058; padding:10px 15px; border-radius:12px; margin-bottom:12px; color:#fff; gap:15px; }
-        .btn-voltar-topo { background: rgba(255,255,255,0.15); border: none; color: #fff; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.2s; }
-        .btn-voltar-topo:hover { background: rgba(255,255,255,0.25); }
-        .header-resolver-titulo { font-size:14px; font-weight:700; flex:1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cronometro-box { font-size:12px; background:rgba(255,255,255,0.2); padding:5px 10px; border-radius:8px; font-weight: 700; }
-        
-        .box-enunciado-render { background:#fff; border:1px solid #e2e8f0; border-radius:10px; padding:15px; margin-bottom:12px; }
-        .texto-enunciado-render { color:#1e293b; font-weight:600; font-size:14px; line-height:1.5; white-space:pre-wrap; }
-        
-        .container-questao-corpo { display:flex; gap:12px; }
-        .col-opcoes-questao { flex:1.2; width:100%; }
-        .col-foto-questao { flex:0.8; }
-        .img-questao-render { width:100%; max-height:220px; border-radius:8px; object-fit:contain; border:1px solid #e2e8f0; background:#fff; }
-        
-        .opcoes-lista { display:flex; flex-direction:column; gap:8px; }
-        .opcao-card { display:flex; align-items:center; padding:12px; background:#fff; border:2px solid #f1f5f9; border-radius:10px; cursor:pointer; font-size:13px; }
-        .opcao-card.selected { border-color:#003058; background:#f0f7ff; }
-        .opcao-card.correta-view { border-color:#003058; background:#f0f7ff; }
-        .opcao-card.errada-view { border-color:#ef4444; background:#fef2f2; }
-        .letra-indicador { font-weight:900; background:#f1f5f9; width:26px; height:26px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-right:10px; font-size:11px; color:#003058; border:1px solid #e2e8f0; flex-shrink:0; }
-
-        .nav-questoes-container { display:flex; gap:6px; margin-bottom:12px; overflow-x:auto; padding-bottom:5px; align-items: center; }
-        .g-btn-pill { min-width:34px; height:34px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; font-weight:700; cursor:pointer; }
-        .g-btn-pill.active { background:#003058; color:#fff; }
-        .g-btn-pill.respondida:not(.active) { background:#e2e8f0; }
-
-        .container-navegacao-setas { display: flex; justify-content: center; align-items: center; gap: 40px; margin-top: 15px; }
-        .btn-seta-nav { background: #fff; border: 1px solid #e2e8f0; width: 45px; height: 45px; border-radius: 50%; color: #003058; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .btn-seta-nav:disabled { opacity: 0.3; cursor: not-allowed; }
-
-        .container-acoes-rodape { display:flex; justify-content:flex-end; margin-top:15px; }
-        .btn-acao-enviar { background:#003058; color:#fff; border:none; height:46px; border-radius:12px; font-weight:700; cursor:pointer; padding: 0 25px; box-shadow: 0 4px 6px rgba(0,48,88,0.2); }
-
-        .modal-aluno { position:fixed; inset:0; background:rgba(0,48,88,0.4); backdrop-filter: blur(6px); display:none; align-items:center; justify-content:center; padding:20px; z-index:9999; }
-        .modal-content-aluno { background:#fff; width:100%; max-width:380px; border-radius:24px; padding:30px; text-align:center; }
-        .tab-btn-aluno { padding:10px 15px; border:none; background:none; font-weight:700; color:#94a3b8; cursor:pointer; }
-        .tab-btn-aluno.active { color:#003058; border-bottom:3px solid #003058; }
-        .nota-badge-circular { width:32px; height:32px; border-radius:50%; background:#003058; color:#fff; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; }
-        .btn-olho-revisao { background: #f1f5f9; border: none; width: 34px; height: 34px; border-radius: 10px; color: #003058; cursor: pointer; }
-
-        @media (max-width: 600px) { 
-            .container-questao-corpo.layout-com-foto { flex-direction: column-reverse; } 
-            .btn-acao-enviar { width: 100%; }
-        }
-
-        #modal-confirmacao-moderno .modal-content-aluno { max-width: 320px; border: 1px solid #e2e8f0; }
-        .img-texto-pequena-central { display: none; }
-        #m-texto-img img { max-width: 150px !important; height: auto; }
-    </style>
-
-    <div class="gram-aluno-wrapper">
-        <div id="modal-confirmacao-moderno" class="modal-aluno" style="z-index: 10000;">
-            <div class="modal-content-aluno">
-                <div style="font-size:35px; color:#003058; margin-bottom:15px;"><i class="fa-solid fa-circle-question"></i></div>
-                <h2 style="color:#003058; font-size:18px; margin-bottom:10px; font-weight:800;">Confirmação</h2>
-                <p id="confirm-msg" style="color:#64748b; font-size:14px; margin-bottom:25px; line-height:1.5;"></p>
-                <div style="display:flex; gap:10px;">
-                    <button onclick="document.getElementById('modal-confirmacao-moderno').style.display='none'" style="flex:1; background:#f1f5f9; color:#64748b; border:none; height:46px; border-radius:12px; font-weight:700; cursor:pointer;">CANCELAR</button>
-                    <button onclick="window.confirmCallback()" style="flex:1; background:#003058; color:#fff; border:none; height:46px; border-radius:12px; font-weight:700; cursor:pointer;">CONFIRMAR</button>
-                </div>
+            <div class="card-aluno clickable" id="card-avisos" onclick="window.acaoAvisos()">
+                <h3>Avisos Recebidos</h3><div id="card-avisos-count" class="count">0</div>
+            </div>
+            <div class="card-aluno clickable" id="card-eventos" onclick="window.location.hash = '#calendarioclm'">
+                <h3>Próximo Evento</h3>
+                <div id="prox-evento-titulo" class="count" style="font-size: 1.2rem; margin: 5px 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Nenhum</div>
+                <div id="prox-evento-data" style="font-size: 0.85rem; color: #64748b; font-weight: 600;">--/--/--</div>
             </div>
         </div>
-
-        <div id="modal-aviso-cronometro" class="modal-aluno">
-            <div class="modal-content-aluno">
-                <div style="font-size:35px; color:#003058; margin-bottom:15px;"><i class="fa-solid fa-stopwatch"></i></div>
-                <h2 style="color:#003058; font-size:20px; margin-bottom:10px; font-weight:800;">Tudo pronto?</h2>
-                <p style="color:#64748b; font-size:14px; margin-bottom:25px; line-height:1.5;">Ao iniciar, seu tempo de resolução será contabilizado para o professor.</p>
-                <button class="btn-acao-enviar" style="width:100%;" onclick="window.começarDeVez()">INICIAR ATIVIDADE</button>
-                <button onclick="document.getElementById('modal-aviso-cronometro').style.display='none'" style="background:none; border:none; color:#94a3b8; margin-top:15px; font-weight:600; cursor:pointer;">Agora não</button>
-            </div>
-        </div>
-
-        <div id="modal-texto-aluno" class="modal-aluno" onclick="if(event.target===this) window.fecharTextoAtividade()">
-            <div class="modal-content-aluno" style="max-height:85vh; overflow-y:auto; text-align:left; max-width:550px;">
-                <h3 id="m-texto-titulo" style="color:#003058; margin-bottom:15px; text-align: center;"></h3>
-                <div id="m-texto-img"></div>
-                <div id="m-texto-body" style="font-size:14px; line-height:1.6; color:#475569; white-space:pre-wrap;"></div>
-                <button class="btn-acao-enviar" style="width:100%; margin-top:20px; background:#f1f5f9; color:#003058; border: 1px solid #cbd5e1; box-shadow:none;" onclick="window.fecharTextoAtividade()">VOLTAR À QUESTÃO</button>
-            </div>
-        </div>
-
-        <div id="main-view-aluno">
-            <h1 style="color:#003058; font-size:24px; font-weight:900; margin-bottom: 2px;">Gramática</h1>
-            <p style="color:#94a3b8; font-size:14px; margin-bottom: 20px;">Pratique seus conhecimentos gramaticais</p>
-            <div style="display:flex; border-bottom:1px solid #e2e8f0; margin-bottom:15px;">
-                <button id="btn-tab-recebidas" class="tab-btn-aluno" onclick="window.switchTabAluno('recebidas')">Recebidas</button>
-                <button id="btn-tab-enviadas" class="tab-btn-aluno" onclick="window.switchTabAluno('enviadas')">Enviadas</button>
-            </div>
-            <div id="pane-recebidas"><div id="lista-recebidas"></div></div>
-            <div id="pane-enviadas" style="display:none;"><div id="lista-enviadas"></div></div>
-        </div>
-
-        <div id="view-resolver" style="display:none;">
-            <div class="header-resolver-top">
-                <button class="btn-voltar-topo" onclick="window.voltarParaLista()"><i class="fa-solid fa-arrow-left"></i></button>
-                <div id="header-atv-titulo" class="header-resolver-titulo"></div>
-                <div class="cronometro-box" id="cronometro-container"><span id="tempo-cronometro">00:00</span></div>
-            </div>
-            <div id="nav-questoes" class="nav-questoes-container"></div>
-            <div id="render-pergunta"></div>
-        </div>
-    </div>`;
+    `;
 });
