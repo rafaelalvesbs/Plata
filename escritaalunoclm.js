@@ -217,7 +217,7 @@ window.Router.register('escritaalunoclm', async () => {
             textarea.oninput = () => {
     const larguraJanela = window.innerWidth;
     // Ajuste fino: 42 caracteres para o novo tamanho mobile, 78 para desktop
-    const caracteresPorLinha = larguraJanela < 600 ? 42 : 78;
+    const caracteresPorLinha = larguraJanela < 600 ? 58 : 78;
     let conteudo = textarea.value;
     let linhasCalculadas = [];
     let parágrafos = conteudo.split('\n');
@@ -525,7 +525,7 @@ window.Router.register('escritaalunoclm', async () => {
     #texto-redacao::-webkit-scrollbar-thumb { background: #003058; border-radius: 4px; }
     #texto-redacao::-webkit-scrollbar-thumb:hover { background: #004075; }
 
-    /* 7. BOTÕES (AÇÃO E ENVIAR FINAL) */
+    /* 7. BOTÕES */
     .btn-enviar-final {
         width: 100%; 
         margin: 20px auto; 
@@ -571,19 +571,20 @@ window.Router.register('escritaalunoclm', async () => {
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
     }
 
-    /* 9. RESPONSIVIDADE */
+    /* 9. RESPONSIVIDADE (MOBILE LARGURA +40%) */
     @media (max-width: 600px) {
         .folha-caderno { 
             height: 571px !important;
             border-radius: 0;
             border-left: none;
             border-right: none;
-            overflow: hidden !important;
+            overflow-x: auto !important; /* Permite rolagem horizontal da folha */
+            overflow-y: hidden !important;
         }
 
         .linha-pautada {
             height: 100% !important;
-            width: 100% !important;
+            width: 140% !important; /* LARGURA AUMENTADA EM 40% */
             display: block !important;
         }
 
@@ -608,6 +609,8 @@ window.Router.register('escritaalunoclm', async () => {
             width: 45px !important;
             height: 100% !important;
             z-index: 10 !important;
+            position: sticky !important; /* Mantém os números visíveis ao rolar pro lado */
+            left: 0 !important;
         }
 
         .margem-numerica div {
