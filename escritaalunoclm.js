@@ -214,34 +214,47 @@ window.Router.register('escritaalunoclm', async () => {
         const saveIndicator = document.getElementById('salvamento-status');
 
         if (textarea) {
-            textarea.oninput = () => {
-    // Força a quebra de linha visual para o cálculo de limite
-    const larguraMaximaMobile = 45; 
+            textarea.oninput = (e) => {
+    const larguraJanela = window.innerWidth;
+    const caracteresPorLinha = larguraJanela < 600 ? 45 : 85;
     let conteudo = textarea.value;
-    let linhasFinais = [];
-    let blocosDeTexto = conteudo.split('\n');
+    let linhasCalculadas = [];
+    let parágrafos = conteudo.split('\n');
 
-    blocosDeTexto.forEach(bloco => {
-        if (bloco.length > larguraMaximaMobile) {
-            // Quebra strings longas sem espaços em sublinhas
-            for (let i = 0; i < bloco.length; i += larguraMaximaMobile) {
-                linhasFinais.push(bloco.substring(i, i + larguraMaximaMobile));
+    parágrafos.forEach(p => {
+        if (p.length > caracteresPorLinha) {
+            for (let i = 0; i < p.length; i += caracteresPorLinha) {
+                linhasCalculadas.push(p.substring(i, i + caracteresPorLinha));
             }
         } else {
-            linhasFinais.push(bloco);
+            linhasCalculadas.push(p);
         }
     });
 
-    // Aplica a trava de 25 linhas totais (reais + automáticas)
-    if (linhasFinais.length > 25) {
-        textarea.value = linhasFinais.slice(0, 25).join('\n');
+    if (linhasCalculadas.length > 25) {
+        // Reconstrói o texto apenas com o que cabe nas 25 linhas
+        let textoValido = "";
+        let contadorLinhas = 0;
+        
+        for (let p of parágrafos) {
+            let subLinhas = Math.ceil(p.length / caracteresPorLinha) || 1;
+            if (contadorLinhas + subLinhas <= 25) {
+                textoValido += p + "\n";
+                contadorLinhas += subLinhas;
+            } else {
+                let sobra = 25 - contadorLinhas;
+                if (sobra > 0) {
+                    textoValido += p.substring(0, sobra * caracteresPorLinha);
+                }
+                break;
+            }
+        }
+        textarea.value = textoValido.replace(/\n$/, "");
     }
 
-    // Atualiza contador de palavras
     const textoLimpo = textarea.value.trim();
     wordCountSpan.innerText = textoLimpo ? textoLimpo.split(/\s+/).length : 0;
 
-    // Salvamento LocalStorage
     if (propostaAtiva) {
         const idKey = propostaAtiva.idOriginal || propostaAtiva.id;
         localStorage.setItem(`rascunho_${idKey}_${user.uid}`, textarea.value);
@@ -502,8 +515,9 @@ window.Router.register('escritaalunoclm', async () => {
         box-sizing: border-box; 
         overflow-y: auto;
         overflow-x: auto;
-        white-space: pre;
-        word-wrap: normal;
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
     }
 
     /* ESTILIZAÇÃO DA BARRA DE ROLAGEM HORIZONTAL */
